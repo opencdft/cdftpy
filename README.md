@@ -88,7 +88,6 @@ ___
         parameter values. Values could specified as array, e.g. [0,0.5,...] 
         or in triplets notation [start]:stop:nsteps
 
-      --version                  display version
       --help                     Show this message and exit.
       --version                  display version
 
