@@ -1,0 +1,47 @@
+{
+  "na": {
+    "charge": 1.0,
+    "sigma": 2.16,
+    "eps": 1.475453291
+  },
+  "k": {
+    "charge": 1.0,
+    "sigma": 2.74,
+    "eps": 1.797887394
+  },
+  "cs": {
+    "charge": 1.0,
+    "sigma": 3.6,
+    "eps": 0.375959596
+  },
+  "li": {
+    "charge": 1.0,
+    "sigma": 1.41,
+    "eps": 1.40889673
+  },
+  "f": {
+    "charge": -1.0,
+    "sigma": 4.02,
+    "eps": 0.030963692
+  },
+  "cl": {
+    "charge": -1.0,
+    "sigma": 4.83,
+    "eps": 0.05349244
+  },
+  "br": {
+    "charge": -1.0,
+    "sigma": 4.92,
+    "eps": 0.112794782
+  },
+  "i": {
+    "charge": -1.0,
+    "sigma": 5.2,
+    "eps": 0.179010348
+  },
+  "units": {
+    "eps": "kj/mol",
+    "sigma": "angstrom"
+  },
+  "reference": "Joung and Cheatham, JPCB 2008 112 (30), 9020-9041, DOI: 10.1021/jp8001614"
+}

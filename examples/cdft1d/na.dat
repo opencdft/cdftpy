@@ -1,0 +1,7 @@
+# Input file for single ion solvation calculation
+# generated on 2021-10-16 10:28:03
+<solute>
+#name  sigma  eps charge 
+ na  2.16 1.475453291 1.0 
+<simulation>
+solvent s2
