@@ -41,6 +41,7 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
                         dashboard=None
                         ):
 
+    print(F"{values=}")
     try:
         solute = read_solute(input_file)
     except FileNotFoundError:
@@ -83,26 +84,41 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
         gr_guess = s.g_r
         sim.append(s)
 
-    tbl = PrettyTable()
+    if len(sim) > 1:
+        tbl = PrettyTable()
 
-    tbl.set_style(PLAIN_COLUMNS)
-    tbl.field_names = [var.capitalize(), "Solvation Free Energy Total(kj/mol)",
-                       "Solvation Free Energy Diff(kj/mol)"]
+        tbl.set_style(PLAIN_COLUMNS)
+        tbl.field_names = [var.capitalize(), "Solvation Free Energy Total(kj/mol)",
+                           "Solvation Free Energy Diff(kj/mol)"]
 
-    fe_ref = sim[0].fe_tot
-    for v, s in zip(values, sim):
-        fe_tot = s.fe_tot
-        tbl.add_row([v,fe_tot,fe_tot-fe_ref])
-    tbl.align = "l"
-    tbl.float_format = ".3"
+        fe_ref = sim[0].fe_tot
+        for v, s in zip(values, sim):
+            fe_tot = s.fe_tot
+            tbl.add_row([v,fe_tot,fe_tot-fe_ref])
+        tbl.align = "l"
+        tbl.float_format = ".3"
 
-    print_banner(F"Results of the scan over {var}:")
+        print_banner(F"Results of the scan over {var}:")
 
-    print(tbl)
+        print(tbl)
 
-    if dashboard is not None:
-        multi_solute_viz(var, values[:len(sim)], sim, dashboard_dest=dashboard)
+        if dashboard is not None:
 
+            multi_solute_viz(var, values[:len(sim)], sim, dashboard_dest=dashboard)
+
+    else:
+        analysis = read_key_value(input_file, section="analysis")
+        if analysis is not None:
+            if "rdf_peaks" in analysis:
+                analyze_rdf_peaks_sim(sim[0])
+
+        output = read_key_value(input_file, section="output")
+        if output is not None:
+            if "rdf" in output:
+                write_rdf_sim(sim[0])
+
+        if dashboard is not None:
+            single_point_viz(sim[0], dashboard_dest=dashboard)
 
 def cdft1d_single_point(input_file, method, solvent_model, dashboard=None):
 
