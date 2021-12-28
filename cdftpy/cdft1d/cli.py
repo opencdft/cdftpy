@@ -179,16 +179,20 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard):
     if scan is not None:
         var = scan[0]
         seq = scan[1]
+        start, stop, nsteps = None, None,None
+        values = None
         try:
-            start, stop, nsteps = parse_triplet_range(seq)
-        except ValueError:
-            print(F"Cannot parse scan option {seq}")
+            triplet = parse_triplet_range1(seq)
+            print(F"{triplet=}")
+            if triplet is None:
+                values = parse_float_list(seq)
+            else:
+                start, stop, nsteps = triplet
+        except BaseException as err:
+            print(F"Cannot parse range values {seq}")
+            print(f"Unexpected {err=}, {type(err)=}")
             sys.exit(1)
-        try:
-            values = parse_float_list(seq)
-        except ValueError:
-            print(F"Cannot parse scan option {seq}")
-            sys.exit(1)
+
 
         cdft1d_multi_solute(input_file, method, solvent_model, var,
                             values=values,
@@ -197,24 +201,61 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard):
                             start=start,
                             dashboard=dashboard
                             )
+
     else:
         cdft1d_single_point(input_file, method, solvent_model, dashboard=dashboard)
 
 
 def parse_triplet_range(buffer):
-    triplet = (None, None, None)
+    triplet = [None, None, None]
     if ":" in buffer:
         print("it is triplet")
         buffer = buffer.split(':')
         buffer = [float(x) if x != '' else None for x in buffer]
-        triplet = (buffer[0], buffer[1], int(buffer[2]))
+        triplet = [buffer[0], buffer[1], int(buffer[2])]
     return triplet
 
+def parse_triplet_range1(buffer):
+
+    if ":" in buffer:
+        buffer = ":"+buffer.strip()
+        buffer = buffer.split(':')
+        buffer = [float(x) if x != '' else None for x in reversed(buffer)]
+        nsteps = int(buffer[0])
+        stop = buffer[1]
+        start = buffer[2]
+        return start, stop, nsteps
+    else:
+        return None
+
+
+def parse_triplet_range2(buffer):
+
+    start, stop, nsteps = None, None, None
+    if ":" in buffer:
+        buffer = buffer.split(':')
+        buffer = [float(x) if x != '' else None for x in reversed(buffer)]
+        buffer.append(None)
+        start, stop, nsteps = reversed(buffer[:3])
+        nsteps = int(nsteps)
+
+    return start, stop, nsteps
 
 def parse_float_list(buffer):
-    float_list = None
+
+    buffer = buffer + ","
     if "," in buffer:
-        print("it is list")
+        buffer = buffer + ","
         buffer = buffer.split(',')
-        float_list = [float(x) if x != '' else None for x in buffer]
+        float_list = [float(x) for x in buffer if x != '']
+    else:
+        float_list = None
+
     return float_list
+
+
+if __name__ == '__main__':
+    buffer = '50'
+    fl = parse_float_list(buffer)
+    print(fl)
+    # tl = parse_triplet_range1(buffer)
