@@ -206,8 +206,10 @@ def pmf_dashboard(sim):
     xlim = 0
 
     for i, name in enumerate(sim.solvent.aname):
-        i0 = np.where(rdf[i, :] > 1.e-8)[0][0]
-        pmf = -np.log(rdf[i, i0:]) / beta
+        ref_zero = np.min(rdf[i, :])
+        rdf_adj = rdf[i, :] - ref_zero
+        i0 = np.where(rdf_adj  > 1.e-4)[0][0]
+        pmf = -np.log(rdf_adj[i0:] ) / beta
         pmf_plot.append(hv.Curve((r[i0:], pmf), 'r', 'PMF',
                                  group="Solvent-solute PMF",
                                  label=F" {name}"))
@@ -308,6 +310,12 @@ def single_solute_test():
     filename = solvent_model_locate(solvent_name)
     solv0 = Solvent.from_file(filename, rism_patch=False)
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
+    solute = {
+        "name": "F",
+        "charge": -1.0,
+        "sigma": 4.02,
+        "eps": 0.030963692
+    }
     # sim = rsdft_1d(solute, solv0, params=params, quiet=True)
     sim = rism_1d(solute, solv0, params=params, quiet=True)
 
@@ -343,4 +351,4 @@ def multi_solute_test():
     multi_solute_viz("charge", values, sim, dashboard_dest="browser")
 
 if __name__ == '__main__':
-    multi_solute_test()
+    single_solute_test()
