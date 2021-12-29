@@ -141,13 +141,16 @@ def rdf_peaks_dashboard(sim):
     tbl.set_style(PLAIN_COLUMNS)
 
     tbl.field_names = ["Site", "1st peak pos/height",
-                       "2nd peak pos/height"]
+                       "2nd peak pos/height", "1st min pos/height"]
 
     for i, name in enumerate(sim.solvent.aname):
         height1, pos1 = pk[name]["first_peak"]
         height2, pos2 = pk[name]["second_peak"]
-        tbl.add_row([name, F"{pos1.round(2)}/{height1.round(2)}",
-                     F"{pos2.round(2)}/{height2.round(2)}"])
+        height3, pos3 = pk[name]["first_min"]
+        tbl.add_row([name, F"{pos1.round(2)}/{height1.round(3)}",
+                     F"{pos2.round(2)}/{height2.round(3)}",
+                    F"{pos3.round(2)}/{height3.round(3)}"]
+                    )
     tbl.align = "r"
 
     txt = tbl.get_string()
@@ -210,7 +213,7 @@ def pmf_dashboard(sim):
         rdf_adj = rdf[i, :] - ref_zero
         i0 = np.where(rdf_adj  > 1.e-4)[0][0]
         pmf = -np.log(rdf_adj[i0:] ) / beta
-        pmf_plot.append(hv.Curve((r[i0:], pmf), 'r', 'PMF',
+        pmf_plot.append(hv.Curve((r[i0:], pmf), 'r', 'PMF (kJ/mol)',
                                  group="Solvent-solute PMF",
                                  label=F" {name}"))
         xlim = int(max(xlim, pk[name]["second_peak"][1] * 2))
