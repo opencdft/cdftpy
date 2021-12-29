@@ -208,7 +208,9 @@ class Solvent(Molecule):
     def report(self):
 
         nv = self.nv
-        print(f"Model: {self.model}")
+        print(f"Solvent parameters:")
+        print(f"  model: {self.model}")
+        print(f"  file: {self.filename}")
         tbl = PrettyTable()
         tbl.set_style(PLAIN_COLUMNS)
         tbl.field_names = ["site", "sigma(Å)", "epsilon(kj/mol)", "charge"]
@@ -216,17 +218,20 @@ class Solvent(Molecule):
             tbl.add_row([self.aname[i], self.sigma[i], self.eps[i], self.charge[i]])
         tbl.align = "l"
         tbl.align["charge"] = "r"
-        print(tbl)
+        print("  geometry:")
+        # print(tbl)
+        for line in tbl.get_string().split("\n"):
+            print(F"  {line}")
         # tbl.left_padding_width = 2
         # print(tbl)
-        print("Bonds")
+        print("  bonds:")
         aname = self.aname
         d = self.distance_matrix()
         for i, j in comb(range(nv), 2):
-            print(F"{aname[i]}-{aname[j]} {d[i, j]} Å"),
-        print(F"Density {self.density}")
-        print(F"Temp {self.temp}")
-        print(F"Dielectric {self.dielectric}")
+            print(F"  {aname[i]}-{aname[j]} {d[i, j]} Å"),
+        print(F"  reference density {self.density}")
+        print(F"  reference temp(K) {self.temp}")
+        print(F"  dielectric {self.dielectric}")
 
 
 def solvent_model_locate(solvent_name):

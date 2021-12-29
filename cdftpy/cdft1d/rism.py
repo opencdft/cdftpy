@@ -16,7 +16,7 @@ from cdftpy.cdft1d.coulomb import compute_long_range_coul_pot_rspace
 from cdftpy.cdft1d.coulomb import compute_short_range_coul_pot_rspace
 from cdftpy.cdft1d.diis import diis_session
 from cdftpy.cdft1d.exceptions import ConvergenceError
-from cdftpy.cdft1d.io_utils import print_banner
+from cdftpy.cdft1d.io_utils import print_banner, print_solute, print_parameters
 from cdftpy.cdft1d.io_utils import print_simulation
 from cdftpy.cdft1d.potential import compute_lj_potential
 from cdftpy.cdft1d.solvent import solvent_model_locate, Solvent
@@ -39,8 +39,15 @@ DEFAULT_PARAMS = dict(diis_iterations=2, tol=1.0e-9, output_rate=10, max_iter=20
 # DG_STRING = "|\u0394\u03B3|"
 DG_STRING = "d_g"
 
+DEFAULT_PRINT_LEVEL=frozenset(['header','parameters','solvent','solute'])
 
-def rism_1d(solute, solvent, params=None, quiet=False, gr_guess=None):
+
+def rism_1d(solute, solvent, params=None, quiet=False, gr_guess=None,
+            print_level = None):
+
+    if print_level is None:
+        print_level = DEFAULT_PRINT_LEVEL
+
     if quiet:
         sys.stdout = open(os.devnull, 'w')
 
@@ -75,8 +82,14 @@ def rism_1d(solute, solvent, params=None, quiet=False, gr_guess=None):
     else:
         rmax = solvent.ifft.rgrid[-1]
 
-    print(HEADER)
-    print_simulation(solute, solvent, params)
+    if 'header' in print_level:
+        print(HEADER)
+    if 'solute' in print_level:
+        print_solute(solute)
+    if 'parameters' in print_level:
+        print_parameters(params)
+    if 'solvent' in print_level:
+        solvent.report()
 
     # initialize fft
     ifft = solvent.ifft
@@ -201,28 +214,14 @@ def compute_free_energy(beta, rho_0, ifft, vl_r, g_r, h_r, c_r):
 if __name__ == "__main__":
     # load solvent model
     solvent_name = "s2"
-
     filename = solvent_model_locate(solvent_name)
     solvent = Solvent.from_file(filename, rism_patch=True)
-
-    # solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    # solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
     params = dict(diis_iterations=2, tol=1.0e-7, max_iter=600, rmax=500)
+
+    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
 
     rmax = solvent.ifft.rgrid[-1]
 
     start_time = time.process_time()
     sim = rism_1d(solute, solvent, params=params)
     t = time.process_time() - start_time
-
-    # print(rmax, sim.fe_tot, t)
-    #
-    # for rmax in np.linspace(100, 1900, 10):
-    #     params["rmax"] = rmax
-    #     start_time = time.process_time()
-    #     sim = rism_1d(solute, solvent, params=params, quiet=True)
-    #     t = time.process_time() - start_time
-    #     print(rmax, sim.fe_tot,t)
-
-    # analyze_rdf_peaks_sim(sim)

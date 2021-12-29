@@ -8,8 +8,11 @@ import datetime
 import json
 import pathlib
 import sys
+from collections import defaultdict
+from contextlib import suppress
 
 import click
+from click import BadParameter
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.shortcuts import confirm
@@ -20,6 +23,53 @@ from cdftpy.cdft1d.config import DATA_DIR
 from cdftpy.cdft1d.workflow import cdft1d_single_point, cdft1d_multi_solute
 
 
+def validate_adjust(ctx, param, value):
+    for v in value:
+        if v[0] not in ["charge","sigma","eps"]:
+            raise BadParameter(F"{value[0]} format must be charge|sigma|eps <float> ")
+    return value
+
+def validate_range(ctx, param, value):
+
+    if value is None:
+        return value
+    print(F"Validating {value}")
+
+    msg_par = F"incorrect parameter {value[0]} \n" \
+              F" format must be charge|sigma|eps"
+    msg_val = F"incorrect parameter {value[1]} \n" \
+              F"format must be <float>,<float>,.. or " \
+              F" [start:]stop:nsteps "
+    if value[0] not in ["charge","sigma","eps"]:
+            raise BadParameter(msg_par)
+
+    seq = defaultdict(type(None))
+
+    buffer = value[1]
+    if ":" in buffer:
+        buffer = buffer.strip()
+        buffer = buffer.split(':')
+        buffer = buffer[::-1]
+        print(buffer)
+        try:
+            with suppress(IndexError):
+                seq["nsteps"] = int(buffer[0])
+                seq["stop"] = float(buffer[1])
+                seq["start"] = float(buffer[2])
+        except ValueError:
+            raise BadParameter(msg_val)
+    elif "," in buffer:
+        buffer = buffer.split(',')
+        try:
+            float_list = [float(x) for x in buffer if x != '']
+        except ValueError:
+            raise BadParameter(msg_val)
+
+        seq["values"] = float_list
+
+    if len(seq) == 0:
+        raise BadParameter(msg_val)
+    return (value[0],seq)
 def cdft1d_generate_input():
     def is_float(num):
         try:
@@ -151,12 +201,15 @@ def cdft1d_generate_input():
                    "under the name provided by optional argument. In the absence of the latter "
                    "dashboard will be open in browser")
 @click.option("-r", "--range", "scan", default=None, type=(str, str),
+              callback=validate_range,
               metavar='[charge|sigma|eps] <values>',
               help="""Run calculation over the range of solute "charge","sigma","eps" values. Values could specified as
                     array (e.g. [0,0.5,...] or in triplets notation [start]:stop:nsteps
                    """)
+@click.option("-a","--adjust", multiple=True, type=(str, float), callback=validate_adjust,
+              help="adjust solute parameters")
 @click.option("--version", is_flag=True, help="display version")
-def cdft_cli(input_file, method, solvent_model, version, scan, dashboard):
+def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust):
     """
     Perform CDFT calculation
 
@@ -179,31 +232,16 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard):
     if scan is not None:
         var = scan[0]
         seq = scan[1]
-        start, stop, nsteps = None, None,None
-        values = None
-        try:
-            triplet = parse_triplet_range1(seq)
-            print(F"{triplet=}")
-            if triplet is None:
-                values = parse_float_list(seq)
-            else:
-                start, stop, nsteps = triplet
-        except BaseException as err:
-            print(F"Cannot parse range values {seq}")
-            print(f"Unexpected {err=}, {type(err)=}")
-            sys.exit(1)
-
-
         cdft1d_multi_solute(input_file, method, solvent_model, var,
-                            values=values,
-                            stop=stop,
-                            nsteps=nsteps,
-                            start=start,
+                            values=seq["values"],
+                            stop=seq["stop"],
+                            nsteps=seq["nsteps"],
+                            start=seq["start"],
                             dashboard=dashboard
                             )
 
     else:
-        cdft1d_single_point(input_file, method, solvent_model, dashboard=dashboard)
+        cdft1d_single_point(input_file, method, solvent_model, dashboard=dashboard, adjust=adjust)
 
 
 def parse_triplet_range(buffer):
@@ -254,8 +292,10 @@ def parse_float_list(buffer):
     return float_list
 
 
+
+
 if __name__ == '__main__':
-    buffer = '50'
-    fl = parse_float_list(buffer)
-    print(fl)
-    # tl = parse_triplet_range1(buffer)
+    buffer = ('charge','10,')
+    seq = validate_range(None, None, buffer)
+    print(seq)
+    print(len(seq))

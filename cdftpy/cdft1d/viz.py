@@ -6,6 +6,7 @@ Visualization Routines
 
 import io
 import logging
+from collections import defaultdict
 from contextlib import redirect_stdout
 
 import holoviews as hv
@@ -112,6 +113,60 @@ def multi_solute_energy_dashboard(var, values, sim):
     return e_widget
 
 
+def multi_solute_peaks_dashboard(var, values, sim):
+    peak_column = pn.Column()
+    pos_column = pn.Column()
+
+    aname_array = sim[0].solvent.aname
+    h1 = defaultdict(list)
+    h2 = defaultdict(list)
+    p1 = defaultdict(list)
+    p2 = defaultdict(list)
+    for name in aname_array:
+        for s in sim:
+            pk = analyze_rdf_peaks_sim(s)
+            height1, pos1 = pk[name]["first_peak"]
+            h1[name].append(height1)
+            p1[name].append(pos1)
+            height2, pos2 = pk[name]["second_peak"]
+            h2[name].append(height2)
+            p2[name].append(pos2)
+
+    pos_plot = []
+    for name in aname_array:
+        curve = hv.Curve((values, h1[name]), F"{var}", 'Height', label="1st peak", group=F"{name} Peak Height Analysis")
+        curve = curve*hv.Scatter((values, h1[name]), F"{var}", 'Height', label="1st peak", group=F"{name} Peak Height Analysis").opts(size=10,marker='circle')
+        curve = curve*hv.Curve((values, h2[name]), F"{var}", 'Height', label="2nd peak", group=F"{name} Peak Height Analysis")
+        curve = curve*hv.Scatter((values, h2[name]), F"{var}", 'Height', label="2nd peak", group=F"{name} Peak Height Analysis").opts(size=10,marker='circle')
+
+        curve.opts(padding=0.1)
+        peak_column.append(curve)
+        curve = hv.Curve((values, p1[name]), "x1", 'Position', label=F"{name}",
+                         group=F"1st peak position analysis").opts(xlabel='sigma')
+        curve = curve*hv.Scatter((values, p1[name]), "x1", 'Position', label=F"{name}",
+                                 group=F"1st peak position analysis").opts(size=10,marker='circle',xlabel='sigma')
+        # curve.opts(xlabel='sigma')
+        curve.opts(padding=0.1)
+        pos_plot.append(curve)
+
+    pos_column.append(hv.Overlay(pos_plot))
+    if len(aname_array)==2:
+        name0 = aname_array[0]
+        name1 = aname_array[1]
+        p10 = np.array(p1[name0])
+        p11 = np.array(p1[name1])
+        curve = hv.Curve((values, p10-p11), F"x1", 'Position Diff',
+                         group=F"1st peak relative position analysis").opts(color='black')
+        curve = curve*hv.Scatter((values, p10-p11), "x1", 'Position Diff',
+                                 group=F"1st peak relative position analysis").opts(size=10,marker='square',
+                                                                                    color='black')
+        curve.opts(xlabel='sigma')
+        curve.opts(padding=0.1)
+
+        pos_column.append(curve)
+    return pn.Row(peak_column,pos_column)
+
+
 def rdf_dashboard(sim):
     rdf = sim.h_r + 1
     r = sim.ifft.rgrid
@@ -141,13 +196,16 @@ def rdf_peaks_dashboard(sim):
     tbl.set_style(PLAIN_COLUMNS)
 
     tbl.field_names = ["Site", "1st peak pos/height",
-                       "2nd peak pos/height"]
+                       "2nd peak pos/height", "1st min pos/height"]
 
     for i, name in enumerate(sim.solvent.aname):
         height1, pos1 = pk[name]["first_peak"]
         height2, pos2 = pk[name]["second_peak"]
-        tbl.add_row([name, F"{pos1.round(2)}/{height1.round(2)}",
-                     F"{pos2.round(2)}/{height2.round(2)}"])
+        height3, pos3 = pk[name]["first_min"]
+        tbl.add_row([name, F"{pos1.round(2)}/{height1.round(3)}",
+                     F"{pos2.round(2)}/{height2.round(3)}",
+                    F"{pos3.round(2)}/{height3.round(3)}"]
+                    )
     tbl.align = "r"
 
     txt = tbl.get_string()
@@ -210,7 +268,7 @@ def pmf_dashboard(sim):
         rdf_adj = rdf[i, :] - ref_zero
         i0 = np.where(rdf_adj  > 1.e-4)[0][0]
         pmf = -np.log(rdf_adj[i0:] ) / beta
-        pmf_plot.append(hv.Curve((r[i0:], pmf), 'r', 'PMF',
+        pmf_plot.append(hv.Curve((r[i0:], pmf), 'r', 'PMF (kJ/mol)',
                                  group="Solvent-solute PMF",
                                  label=F" {name}"))
         xlim = int(max(xlim, pk[name]["second_peak"][1] * 2))
@@ -249,7 +307,7 @@ def results_dashboard(sim):
 
     html_pane = pn.pane.HTML(F"{txt}")
 
-    return pn.Column(html_pane, scroll=True)
+    return pn.Column(html_pane, scroll=True, width=500)
 
 
 def multi_solute_results_dashboard(sim):
@@ -274,7 +332,7 @@ def multi_solute_results_dashboard(sim):
     <h2>Solvent</h2><pre>{solv_txt} </pre>
     """
     html_pane = pn.pane.HTML(F"{txt}")
-    return pn.Column(html_pane, scroll=True)
+    return pn.Column(html_pane, scroll=True, width=500)
 
 
 def single_point_viz(sim, dashboard_dest="browser"):
@@ -295,7 +353,8 @@ def multi_solute_viz(var, values, sim, dashboard_dest="browser"):
     rdf_widget = multi_solute_rdf_dashboard(var, values, sim)
     e_widget = multi_solute_energy_dashboard(var, values, sim)
     charts = pn.Tabs(("Solvation Free Energy", e_widget), ("Density", rdf_widget))
-
+    if sim[0].solvent.nv == 2:
+        charts.append(("Peak Analysis",multi_solute_peaks_dashboard(var, values, sim)))
     viz = pn.Row(html_pane, charts)
     if dashboard_dest == "browser":
         viz.show()
@@ -342,13 +401,15 @@ def multi_solute_test():
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
 
     sim = []
-    values =  [-1, -0.5, 0]
+    values =  [5,8,10,12,15,20,25,30,35,40,45,50]
+    var = "sigma"
     for v in values:
-        solute["charge"] = v
+        solute[var] = v
         s = rsdft_1d(solute, solvent, params=parameters)
         sim.append(s)
 
-    multi_solute_viz("charge", values, sim, dashboard_dest="browser")
+    # multi_solute_peaks_dashboard("sigma", values, sim)
+    multi_solute_viz(var, values, sim, dashboard_dest="browser")
 
 if __name__ == '__main__':
-    single_solute_test()
+    multi_solute_test()
