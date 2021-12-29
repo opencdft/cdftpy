@@ -135,7 +135,6 @@ def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjus
         solute[k] = v[0]
 
     if adjust is not None:
-        print("adjustinh")
         for par_val in adjust:
             par, val = par_val
             solute[par] = float(val)
