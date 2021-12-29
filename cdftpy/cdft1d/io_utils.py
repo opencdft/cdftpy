@@ -4,6 +4,13 @@ import ast
 import sys
 import numpy as np
 
+def print_solute(solute):
+    print("Solute:  {name} charge={charge} sigma={sigma} epsilon={eps}".format(**solute))
+
+def print_parameters(params):
+    print("Simulation parameters:")
+    for k, v in params.items():
+        print("  ", k, v)
 
 def print_simulation(solute, solvent_model, params):
     print("Solute:")

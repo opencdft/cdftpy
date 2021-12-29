@@ -18,7 +18,7 @@ from cdftpy.cdft1d.coulomb import compute_long_range_coul_pot_kspace, compute_co
 from cdftpy.cdft1d.coulomb import compute_long_range_coul_pot_rspace
 from cdftpy.cdft1d.coulomb import compute_short_range_coul_pot_rspace
 from cdftpy.cdft1d.diis import diis_session
-from cdftpy.cdft1d.io_utils import print_banner
+from cdftpy.cdft1d.io_utils import print_banner, print_parameters, print_solute
 from cdftpy.cdft1d.io_utils import print_simulation
 from cdftpy.cdft1d.potential import compute_lj_potential_mod
 from cdftpy.cdft1d.solvent import Solvent, solvent_model_locate, Molecule1
@@ -37,13 +37,19 @@ Marat Valiev and Gennady Chuev
 kb = R
 PI = np.pi
 
-DEFAULT_PARAMS = dict(diis_iterations=2, tol=1.0e-9, output_rate=10, max_iter=200, rcoul=1.25)
+DEFAULT_PARAMS = dict(diis_iterations=2, tol=1.0e-9, output_rate=10, max_iter=200, rcoul=1.25, method="rsdft")
 
 # DG_STRING = "|\u0394\u03B3|"
 DG_STRING = "d_g"
 
+DEFAULT_PRINT_LEVEL=frozenset(['header','parameters','solvent','solute'])
 
-def rsdft_1d(solute, solvent, params=None, quiet=False, gr_guess=None):
+def rsdft_1d(solute, solvent, params=None, quiet=False, gr_guess=None,
+             print_level = None):
+
+    if print_level is None:
+        print_level = DEFAULT_PRINT_LEVEL
+
     if solvent.nv > 2:
         print("RSDFT method is currently restricted to diatomic liquids")
         print("As an alternative you can try RISM")
@@ -78,12 +84,19 @@ def rsdft_1d(solute, solvent, params=None, quiet=False, gr_guess=None):
         solvent.extend(rmax)
     else:
         rmax = solvent.ifft.rgrid[-1]
+        params["rmax"] = rmax
 
     temp = float(params["temp"])
     beta = 1.0 / (kb * temp)
 
-    print(HEADER)
-    print_simulation(solute, solvent, params)
+    if 'header' in print_level:
+        print(HEADER)
+    if 'solute' in print_level:
+        print_solute(solute)
+    if 'parameters' in print_level:
+        print_parameters(params)
+    if 'solvent' in print_level:
+        solvent.report()
 
     zeta = solvent.zeta(beta)
 
@@ -326,7 +339,7 @@ if __name__ == "__main__":
     import time
 
     # load solvent model
-    solvent_name = "hcl0"
+    solvent_name = "s2"
     filename = solvent_model_locate(solvent_name)
     solvent = Solvent.from_file(filename)
     # solvent1 = copy.deepcopy(solvent)
@@ -345,10 +358,10 @@ if __name__ == "__main__":
 
     start_time = time.process_time()
     f = io.StringIO()
-    with redirect_stdout(f):
-        sim = rsdft_1d(solute, solvent, params=params)
-    s = f.getvalue()
-    print(s)
+
+    sim = rsdft_1d(solute, solvent, params=params,
+                   print_level={'header', 'parameters'})
+
     # t = time.process_time() - start_time
     # print(rmax, sim.fe_tot,t)
     #

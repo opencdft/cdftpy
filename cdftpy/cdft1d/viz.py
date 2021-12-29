@@ -249,7 +249,7 @@ def results_dashboard(sim):
 
     html_pane = pn.pane.HTML(F"{txt}")
 
-    return pn.Column(html_pane, scroll=True)
+    return pn.Column(html_pane, scroll=True, width=500)
 
 
 def multi_solute_results_dashboard(sim):
@@ -274,7 +274,7 @@ def multi_solute_results_dashboard(sim):
     <h2>Solvent</h2><pre>{solv_txt} </pre>
     """
     html_pane = pn.pane.HTML(F"{txt}")
-    return pn.Column(html_pane, scroll=True)
+    return pn.Column(html_pane, scroll=True, width=500)
 
 
 def single_point_viz(sim, dashboard_dest="browser"):

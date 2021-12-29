@@ -41,7 +41,7 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
                         dashboard=None
                         ):
 
-    print(F"{values=}")
+
     try:
         solute = read_solute(input_file)
     except FileNotFoundError:
@@ -72,33 +72,36 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
 
     runner = _RUNNERS[method]
     sim = []
-    gr_guess = None
+
+    print_level = {'header', 'parameters','solute','solvent'}
     for v in values:
         solute[var] = v
         try:
-            s = runner(solute, solvent, params=parameters, gr_guess=gr_guess)
+            s = runner(solute, solvent, params=parameters,
+                       print_level=print_level)
+            print("\n")
         except ConvergenceError as e:
             print(F"cannot converge {var}={v} point")
             print("skipping the rest of the cycle")
             break
-        gr_guess = s.g_r
+        print_level = {'solute'}
         sim.append(s)
 
     if len(sim) > 1:
         tbl = PrettyTable()
 
         tbl.set_style(PLAIN_COLUMNS)
-        tbl.field_names = [var.capitalize(), "Solvation Free Energy Total(kj/mol)",
-                           "Solvation Free Energy Diff(kj/mol)"]
-
+        tbl.field_names = [var.capitalize(), "Solvation Free Energy",
+                           "Solvation Free Energy "]
+        tbl.add_row([" ", "total (kj/mol)", "diff(kj/mol)"])
         fe_ref = sim[0].fe_tot
         for v, s in zip(values, sim):
             fe_tot = s.fe_tot
             tbl.add_row([v,fe_tot,fe_tot-fe_ref])
-        tbl.align = "l"
+        tbl.align = "r"
         tbl.float_format = ".3"
 
-        print_banner(F"Results of the scan over {var}:")
+        print_banner(F"Final results:")
 
         print(tbl)
 
@@ -120,7 +123,7 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
         if dashboard is not None:
             single_point_viz(sim[0], dashboard_dest=dashboard)
 
-def cdft1d_single_point(input_file, method, solvent_model, dashboard=None):
+def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjust=None):
 
     try:
         solute = read_solute(input_file)
@@ -130,6 +133,12 @@ def cdft1d_single_point(input_file, method, solvent_model, dashboard=None):
 
     for k, v in solute.items():
         solute[k] = v[0]
+
+    if adjust is not None:
+        print("adjustinh")
+        for par_val in adjust:
+            par, val = par_val
+            solute[par] = float(val)
 
     parameters = read_key_value(input_file, section="simulation")
 
