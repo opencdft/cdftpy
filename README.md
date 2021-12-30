@@ -93,7 +93,7 @@ ___
       -r --range [charge|sigma|eps] <values>
         Run calculation over the range of solute "charge","sigma",or "eps" 
         parameter values. Values could specified as comma
-        delimted array ( e.g. 0,0.5,...)
+        delimited array ( e.g. 0,0.5,...)
         or in triplets notation [start:]stop:nsteps
 
       --help                     
