@@ -207,6 +207,7 @@ def cdft1d_generate_input():
                     array (e.g. [0,0.5,...] or in triplets notation [start]:stop:nsteps
                    """)
 @click.option("-a","--adjust", multiple=True, type=(str, float), callback=validate_adjust,
+              metavar='[charge|sigma|eps] <value>',
               help="adjust solute parameters")
 @click.option("--version", is_flag=True, help="display version")
 def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust):

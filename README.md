@@ -73,13 +73,17 @@ ___
 
 
     Options:
+
       -m, --method [rism|rsdft]
-      Defines calculation method, with rsdft as a default
+        Define calculation method, with rsdft as a default
 
       -s, --solvent <solvent_model>
-      Defines solvent_model with default as s2. 
-      Other avaialble models include hcl, n2, hcl_neutral.
-      An additional model restricted to RISM is spce.
+        Define solvent_model with default as s2. 
+        Other avaialble models include hcl, n2, hcl_neutral.
+        An additional model restricted to RISM is spce.
+
+      -a, --adjust [charge|sigma|eps] <value>
+        Adjust solute charge, sigma, or eps parameters
 
       -d, --dashboard [filename]      
         Generate dashboard for analysis. 
@@ -88,12 +92,15 @@ ___
 
       -r --range [charge|sigma|eps] <values>
         Run calculation over the range of solute "charge","sigma",or "eps" 
-        parameter values. Values could specified as array, e.g. [0,0.5,...] 
-        or in triplets notation [start]:stop:nsteps
+        parameter values. Values could specified as comma
+        delimted array ( e.g. 0,0.5,...)
+        or in triplets notation [start:]stop:nsteps
 
-      --help                     Show this message and exit.
-      --version                  display version
+      --help                     
+         Show help message
 
+      --version                  
+         Display version
 
 ___
 #### References:
