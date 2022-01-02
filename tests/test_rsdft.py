@@ -4,26 +4,18 @@
 
 import pytest
 
+from cdftpy.cdft1d.simulation import SolvatedIon, SolvatedIon
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
-from cdftpy.cdft1d.rsdft import rsdft_1d
-
-from cdftpy.cdft1d.solvent import Solvent, solvent_model_locate
-
 
 def test_rsdft_cation():
-
-    # load solvent model
-    solvent_name = "s2"
-
-    filename = solvent_model_locate(solvent_name)
-
-    solvent = Solvent.from_file(filename)
 
     solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
 
     params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200)
 
-    sim = rsdft_1d(solute, solvent, params=params)
+    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rsdft")
+    sim.cdft()
+
 
     fe = sim.fe_tot
     # fe_ref = -318.3690861027192 old value when using kspace evaluation
@@ -48,18 +40,12 @@ def test_rsdft_cation():
 
 def test_rsdft_cation_rmax():
 
-    # load solvent model
-    solvent_name = "s2"
-
-    filename = solvent_model_locate(solvent_name)
-
-    solvent = Solvent.from_file(filename)
-
     solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
 
     params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200, rmax=500)
 
-    sim = rsdft_1d(solute, solvent, params=params)
+    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rsdft")
+    sim.cdft()
 
     fe = sim.fe_tot
     fe_ref = -319.111030
@@ -83,18 +69,12 @@ def test_rsdft_cation_rmax():
 
 def test_rsdft_anion():
 
-    # load solvent model
-    solvent_name = "s2"
-
-    filename = solvent_model_locate(solvent_name)
-
-    solv = Solvent.from_file(filename)
-
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
 
     params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200)
 
-    sim = rsdft_1d(solute, solv, params=params)
+    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rsdft")
+    sim.cdft()
 
     fe = sim.fe_tot
 
@@ -122,18 +102,12 @@ def test_rsdft_anion():
 
 def test_rsdft_anion_rmax():
 
-    # load solvent model
-    solvent_name = "s2"
-
-    filename = solvent_model_locate(solvent_name)
-
-    solv = Solvent.from_file(filename)
-
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
 
     params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200, rmax=500)
 
-    sim = rsdft_1d(solute, solv, params=params)
+    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rsdft")
+    sim.cdft()
 
     fe = sim.fe_tot
 

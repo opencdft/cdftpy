@@ -33,7 +33,6 @@ def validate_range(ctx, param, value):
 
     if value is None:
         return value
-    print(F"Validating {value}")
 
     msg_par = F"incorrect parameter {value[0]} \n" \
               F" format must be charge|sigma|eps"
@@ -47,10 +46,9 @@ def validate_range(ctx, param, value):
 
     buffer = value[1]
     if ":" in buffer:
-        buffer = buffer.strip()
+        buffer = buffer.strip(':')
         buffer = buffer.split(':')
         buffer = buffer[::-1]
-        print(buffer)
         try:
             with suppress(IndexError):
                 seq["nsteps"] = int(buffer[0])
@@ -70,6 +68,8 @@ def validate_range(ctx, param, value):
     if len(seq) == 0:
         raise BadParameter(msg_val)
     return (value[0],seq)
+
+
 def cdft1d_generate_input():
     def is_float(num):
         try:
@@ -245,58 +245,8 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust
         cdft1d_single_point(input_file, method, solvent_model, dashboard=dashboard, adjust=adjust)
 
 
-def parse_triplet_range(buffer):
-    triplet = [None, None, None]
-    if ":" in buffer:
-        print("it is triplet")
-        buffer = buffer.split(':')
-        buffer = [float(x) if x != '' else None for x in buffer]
-        triplet = [buffer[0], buffer[1], int(buffer[2])]
-    return triplet
-
-def parse_triplet_range1(buffer):
-
-    if ":" in buffer:
-        buffer = ":"+buffer.strip()
-        buffer = buffer.split(':')
-        buffer = [float(x) if x != '' else None for x in reversed(buffer)]
-        nsteps = int(buffer[0])
-        stop = buffer[1]
-        start = buffer[2]
-        return start, stop, nsteps
-    else:
-        return None
-
-
-def parse_triplet_range2(buffer):
-
-    start, stop, nsteps = None, None, None
-    if ":" in buffer:
-        buffer = buffer.split(':')
-        buffer = [float(x) if x != '' else None for x in reversed(buffer)]
-        buffer.append(None)
-        start, stop, nsteps = reversed(buffer[:3])
-        nsteps = int(nsteps)
-
-    return start, stop, nsteps
-
-def parse_float_list(buffer):
-
-    buffer = buffer + ","
-    if "," in buffer:
-        buffer = buffer + ","
-        buffer = buffer.split(',')
-        float_list = [float(x) for x in buffer if x != '']
-    else:
-        float_list = None
-
-    return float_list
 
 
 
 
-if __name__ == '__main__':
-    buffer = ('charge','10,')
-    seq = validate_range(None, None, buffer)
-    print(seq)
-    print(len(seq))
+

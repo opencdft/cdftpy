@@ -3,7 +3,7 @@
 """
 Task wrappers to CDFT calculations
 """
-
+import copy
 import math
 import sys
 
@@ -12,19 +12,14 @@ from prettytable import PrettyTable, PLAIN_COLUMNS
 
 from cdftpy.cdft1d.io_utils import read_key_value, print_banner
 from cdftpy.cdft1d.io_utils import read_solute
+from cdftpy.cdft1d.simulation import SolvatedIon
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
 from cdftpy.cdft1d.rdf import write_rdf_sim
-from cdftpy.cdft1d.rism import rism_1d
-from cdftpy.cdft1d.rsdft import rsdft_1d
-from cdftpy.cdft1d.solvent import solvent_model_locate, Solvent
 from cdftpy.cdft1d.exceptions import ConvergenceError
 from cdftpy.cdft1d.viz import single_point_viz, multi_solute_viz
 
-_RUNNERS = dict(rism=rism_1d, rsdft=rsdft_1d)
-
 
 def my_linspace(start, stop, nsteps):
-
     values, dv = np.linspace(start, stop, num=nsteps, retstep=True)
 
     if dv < 1:
@@ -33,6 +28,7 @@ def my_linspace(start, stop, nsteps):
         nr = 1
     return list(map(lambda x: x.round(nr), values))
 
+
 def cdft1d_multi_solute(input_file, method, solvent_model, var,
                         values=None,
                         stop=None,
@@ -40,8 +36,6 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
                         start=None,
                         dashboard=None
                         ):
-
-
     try:
         solute = read_solute(input_file)
     except FileNotFoundError:
@@ -61,67 +55,58 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
 
         values = my_linspace(start, stop, nsteps)
 
+    if len(values) == 1:
+        adjust = [(var,values[0])]
+        fe = cdft1d_single_point(input_file,
+                            method, solvent_model,
+                            dashboard=dashboard, adjust=adjust)
+        return [fe]
+
     parameters = read_key_value(input_file, section="simulation")
 
-    parameters["solvent"] = solvent_model
-    solvent_name = parameters["solvent"]
-    filename = solvent_model_locate(solvent_name)
+    sim_array = []
+    fe_array = []
 
-    rism_patch = (method == "rism")
-    solvent = Solvent.from_file(filename, rism_patch=rism_patch)
+    sim = SolvatedIon(solute=solute, solvent=solvent_model, params=parameters, method=method)
 
-    runner = _RUNNERS[method]
-    sim = []
+    print_level = {'header', 'parameters', 'solute', 'solvent'}
+    print(sim.to_string(print_level=print_level))
+    print(F"Performing calculation over the range of {var}s \n {values}")
 
-    print_level = {'header', 'parameters','solute','solvent'}
     for v in values:
-        solute[var] = v
+        sim.solute[var] = v
         try:
-            s = runner(solute, solvent, params=parameters,
-                       print_level=print_level)
-            print("\n")
-        except ConvergenceError as e:
+            print(F"{var}={v}")
+            fe = sim.cdft()
+            fe_array.append(fe)
+            print(sim.log)
+
+        except ConvergenceError:
             print(F"cannot converge {var}={v} point")
             print("skipping the rest of the cycle")
             break
-        print_level = {'solute'}
-        sim.append(s)
 
-    if len(sim) > 1:
-        tbl = PrettyTable()
+        sim_array.append(copy.deepcopy(sim))
 
-        tbl.set_style(PLAIN_COLUMNS)
-        tbl.field_names = [var.capitalize(), "Solvation Free Energy",
-                           "Solvation Free Energy "]
-        tbl.add_row([" ", "total (kj/mol)", "diff(kj/mol)"])
-        fe_ref = sim[0].fe_tot
-        for v, s in zip(values, sim):
-            fe_tot = s.fe_tot
-            tbl.add_row([v,fe_tot,fe_tot-fe_ref])
-        tbl.align = "r"
-        tbl.float_format = ".3"
+    tbl = PrettyTable()
+    tbl.set_style(PLAIN_COLUMNS)
+    tbl.field_names = [var.capitalize(), "Solvation Free Energy",
+                       "Solvation Free Energy "]
+    tbl.add_row([" ", "total (kj/mol)", "diff(kj/mol)"])
+    fe_ref = fe_array[0]
+    for fe,v in zip(fe_array,values):
+        tbl.add_row([v, fe, fe - fe_ref])
+    tbl.align = "r"
+    tbl.float_format = ".3"
 
-        print_banner(F"Final results:")
+    print_banner(F"         Final results:          ")
+    print(tbl)
 
-        print(tbl)
+    if dashboard is not None:
+        multi_solute_viz(var, values[:len(sim_array)], sim_array, dashboard_dest=dashboard)
 
-        if dashboard is not None:
+    return fe_array
 
-            multi_solute_viz(var, values[:len(sim)], sim, dashboard_dest=dashboard)
-
-    else:
-        analysis = read_key_value(input_file, section="analysis")
-        if analysis is not None:
-            if "rdf_peaks" in analysis:
-                analyze_rdf_peaks_sim(sim[0])
-
-        output = read_key_value(input_file, section="output")
-        if output is not None:
-            if "rdf" in output:
-                write_rdf_sim(sim[0])
-
-        if dashboard is not None:
-            single_point_viz(sim[0], dashboard_dest=dashboard)
 
 def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjust=None):
 
@@ -141,19 +126,10 @@ def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjus
 
     parameters = read_key_value(input_file, section="simulation")
 
-    parameters["solvent"] = solvent_model
-    solvent_name = parameters["solvent"]
-    filename = solvent_model_locate(solvent_name)
+    sim = SolvatedIon(solute=solute, solvent=solvent_model, params=parameters, method=method)
+    print(sim.to_string())
 
-    if method == "rism":
-        solvent = Solvent.from_file(filename, rism_patch=True)
-        sim = rism_1d(solute, solvent, params=parameters)
-    elif method == "rsdft":
-        solvent = Solvent.from_file(filename, rism_patch=False)
-        sim = rsdft_1d(solute, solvent, params=parameters)
-    else:
-        print(f"Unknown method {theory}")
-        sys.exit(1)
+    fe = sim.cdft(quiet=False)
 
     analysis = read_key_value(input_file, section="analysis")
     if analysis is not None:
@@ -168,3 +144,4 @@ def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjus
     if dashboard is not None:
         single_point_viz(sim, dashboard_dest=dashboard)
 
+    return fe

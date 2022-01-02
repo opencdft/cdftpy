@@ -4,11 +4,13 @@
 This module provides collection
 of routines related to solvent
 """
+import copy
 import logging
 import os
 import pathlib
 import sys
 from dataclasses import dataclass, field
+from io import StringIO
 from itertools import combinations as comb
 
 import numpy as np
@@ -105,7 +107,7 @@ class Solvent(Molecule):
     ifft: object = None
     s_k: np.ndarray = None
     hbar_k: np.ndarray = None
-    kgrid: np.ndarray = None
+
 
     @classmethod
     def from_file(cls, filename, rism_patch=False):
@@ -123,10 +125,39 @@ class Solvent(Molecule):
         s_k, kgrid = read_array(filename, "s_k")
         solvent["s_k"] = s_k
         solvent["hbar_k"] = hbar
-        solvent["kgrid"] = kgrid
         if kgrid is not None:
             solvent["ifft"] = RadFFT.from_kgrid(kgrid)
         return cls(**solvent, **state)
+
+    @classmethod
+    def from_name(cls,name,rism_patch=False):
+        filepath = solvent_model_locate(name)
+        return cls.from_file(filepath,rism_patch=rism_patch)
+
+    @property
+    def rgrid(self):
+        return self.ifft.rgrid
+
+    def hbar(self,method):
+        s_k = self.s_k
+        sm = self.sm_k(self.kgrid)
+        if method == "rsdft":
+            inv_sm = np.linalg.inv(sm.transpose(2, 0, 1))
+            delta_s_k = s_k - sm
+            hbar = np.einsum('imk,kmj->ijk', np.einsum('kij,jmk->imk',
+                                                       inv_sm, delta_s_k), inv_sm)
+        elif method == "rism":
+            delta = np.diagflat(np.ones(s_k.shape[0]))
+            hbar = s_k - np.expand_dims(delta, axis=2)
+        else:
+            print(F"incorrect calculation method {method}")
+            sys.exit(0)
+
+        return hbar
+
+    @property
+    def kgrid(self):
+        return self.ifft.kgrid
 
     def zeta(self, beta):
         mu2 = self.dipole ** 2
@@ -146,7 +177,6 @@ class Solvent(Molecule):
                 fp.write(F"{self.aname[i]}   {self.atype[i]}    {self.x[i]}     {self.y[i]}     {self.z[i]}\n")
 
             fp.write("<interactions>\n")
-            # fp.write("# type   sigma    eps(kj/mol)   charge(e)\n")
             fp.write(f"#{'type' : <10}{'sigma' : ^10}{'eps' : ^10}{'charge' : >10}\n")
             for i in range(self.nv):
                 fp.write(F" {self.atype[i]: <10}{self.sigma[i]: ^10}{self.eps[i]: ^10}{self.charge[i]: >10}\n")
@@ -205,12 +235,12 @@ class Solvent(Molecule):
 
         return d
 
-    def report(self):
-
+    def to_string(self):
+        sp = StringIO()
         nv = self.nv
-        print(f"Solvent parameters:")
-        print(f"  model: {self.model}")
-        print(f"  file: {self.filename}")
+        print(f"Solvent:", file=sp)
+        print(f"  model: {self.model}", file=sp)
+        print(f"  file: {self.filename}", file=sp)
         tbl = PrettyTable()
         tbl.set_style(PLAIN_COLUMNS)
         tbl.field_names = ["site", "sigma(Å)", "epsilon(kj/mol)", "charge"]
@@ -218,21 +248,31 @@ class Solvent(Molecule):
             tbl.add_row([self.aname[i], self.sigma[i], self.eps[i], self.charge[i]])
         tbl.align = "l"
         tbl.align["charge"] = "r"
-        print("  geometry:")
-        # print(tbl)
+        print("  geometry:", file=sp)
+
         for line in tbl.get_string().split("\n"):
-            print(F"  {line}")
-        # tbl.left_padding_width = 2
-        # print(tbl)
-        print("  bonds:")
+            print(F"  {line}", file=sp)
+
+        print("  bonds:", file=sp)
         aname = self.aname
         d = self.distance_matrix()
         for i, j in comb(range(nv), 2):
-            print(F"  {aname[i]}-{aname[j]} {d[i, j]} Å"),
-        print(F"  reference density {self.density}")
-        print(F"  reference temp(K) {self.temp}")
-        print(F"  dielectric {self.dielectric}")
+            print(F"  {aname[i]}-{aname[j]} {d[i, j]} Å", file=sp),
+        print(F"  size {self.rmax:.2f} Å", file=sp)
+        print(F"  kmax {self.kmax:.2f} 1/Å", file=sp)
+        print(F"  reference density {self.density}", file=sp)
+        print(F"  reference temp(K) {self.temp}", file=sp)
+        print(F"  dielectric {self.dielectric}", file=sp)
 
+        return sp.getvalue()
+
+    @property
+    def rmax(self):
+        return self.rgrid[-1]
+
+    @property
+    def kmax(self):
+        return self.kgrid[-1]
 
 def solvent_model_locate(solvent_name):
     solvent = solvent_name + ".smdl"
@@ -242,7 +282,6 @@ def solvent_model_locate(solvent_name):
         if solvent_file.exists():
             break
     else:
-        # print(f"Cannot find {solvent=}" in {str(cwd)} or {str(DATA_DIR)})
         print(f"Cannot find {solvent=} in ", cwd, DATA_DIR)
         print("Searched in ", cwd, DATA_DIR)
         sys.exit(1)
@@ -280,37 +319,34 @@ def compute_sm_rigid_bond(xv, yv, zv, kgrid):
     return d2
 
 
+def extend(solvent0, rmax):
+
+
+    ifft = solvent0.ifft
+    rgrid = ifft.rgrid
+
+    dr = rgrid[1] - rgrid[0]
+    nr_old = len(rgrid)
+    nr_new = int(rmax / dr)
+
+    if nr_new > nr_old:
+
+        s_r = np.apply_along_axis(ifft.to_rspace, 2, solvent0.s_k)
+        dims = list(s_r.shape)
+        dims[-1] = nr_new
+        s_r_new = np.zeros(dims)
+        s_r_new[..., :nr_old] = s_r[..., :nr_old]
+        rgrid_new = fft_rgrid_iv(dr, nr_new)
+        solvent = copy.deepcopy(solvent0)
+        solvent.ifft = RadFFT.from_rgrid(rgrid_new)
+        solvent.s_k = np.apply_along_axis(solvent.ifft.to_kspace, 2, s_r_new)
+        return solvent
+
+    return solvent0
+
 if __name__ == "__main__":
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    m = Molecule1(**solute)
-    pass
-    # s = solvent.report()
-    #
-    # s.seek(0)
-    # for line in s:
-    #     print(line)
 
-    # nv = solvent.nv
-    # tbl = PrettyTable()
-    # tbl.set_style(PLAIN_COLUMNS)
-    # tbl.field_names = ["name", "type", "sigma", "epsilon", "charge"]
-    # for i in range(solvent.nv):
-    #     tbl.add_row([solvent.aname[i],solvent.atype[i],solvent.sigma[i],solvent.eps[i],solvent.charge[i]])
-    # print("Parameters")
-    # tbl.padding_width = 0
-    # print(tbl)
-    # # tbl.left_padding_width = 2
-    # # print(tbl)
-    # print("Bonds")
-    # aname = solvent.aname
-    # d = solvent.distance_matrix()
-    # for i,j in comb(range(nv), 2):
-    #     print(F{aname[i]}-{aname[j]}  {d[i,j]}")
-
-    # structure_factor = dict (
-    #     tag="s_k",
-    #     kgrid = solvent.ifft.kgrid,
-    #     s_k = solvent.s_k
-    # )
-    # solvent.to_smdl_file("test1.dat", structure_factor)
-    # write_matrix_array("sk.dat", solvent.ifft.kgrid, solvent.s_k, header="S(k)")
+    solvent_name = "s2"
+    filename = solvent_model_locate(solvent_name)
+    slv0 = Solvent.from_file(filename, rism_patch=True)
+    print(slv0.to_string())

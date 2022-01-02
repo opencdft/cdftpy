@@ -284,13 +284,10 @@ def pmf_dashboard(sim):
 def results_dashboard(sim):
     fe_tot = sim.fe_tot.round(3)
     solute = sim.solute
-    solute_txt = F"{solute.name} charge={solute.charge} " \
-                 F"sigma={solute.sigma} Å epsilon={solute.eps} kj/mol"
+    solute_txt = F"{solute['name']} charge={solute['charge']} " \
+                 F"sigma={solute['sigma']} Å epsilon={solute['eps']} kj/mol"
     solvent = sim.solvent
-    f = io.StringIO()
-    with redirect_stdout(f):
-        solvent.report()
-    s = f.getvalue()
+    s = solvent.to_string()
 
     sim_params = F"Method: {sim.method}\n" \
                  F"Box size: {sim.rmax}\n" \
@@ -313,14 +310,11 @@ def results_dashboard(sim):
 def multi_solute_results_dashboard(sim):
     s = sim[0]
     solute = s.solute
-    solute_txt = F"{solute.name} charge={solute.charge} " \
-                 F"sigma={solute.sigma} Å epsilon={solute.eps} kj/mol"
+    solute_txt = F"{solute['name']} charge={solute['charge']} " \
+                 F"sigma={solute['sigma']} Å epsilon={solute['eps']} kj/mol"
     solvent = s.solvent
-    f = io.StringIO()
-    with redirect_stdout(f):
-        solvent.report()
-    solv_txt = f.getvalue()
 
+    solv_txt = solvent.to_string()
     sim_params = F"Method: {s.method}\n" \
                  F"Box size: {s.rmax}\n" \
                  F"Temp: {solvent.temp}"
@@ -353,63 +347,11 @@ def multi_solute_viz(var, values, sim, dashboard_dest="browser"):
     rdf_widget = multi_solute_rdf_dashboard(var, values, sim)
     e_widget = multi_solute_energy_dashboard(var, values, sim)
     charts = pn.Tabs(("Solvation Free Energy", e_widget), ("Density", rdf_widget))
-    if sim[0].solvent.nv == 2:
-        charts.append(("Peak Analysis",multi_solute_peaks_dashboard(var, values, sim)))
+    # if sim[0].solvent.nv == 2:
+    #     charts.append(("Peak Analysis",multi_solute_peaks_dashboard(var, values, sim)))
     viz = pn.Row(html_pane, charts)
     if dashboard_dest == "browser":
         viz.show()
     else:
         viz.save(dashboard_dest)
 
-
-def single_solute_test():
-
-    params = dict(diis_iterations=2, tol=1.0e-7, max_iter=200)
-    solvent_name = "spce"
-    filename = solvent_model_locate(solvent_name)
-    solv0 = Solvent.from_file(filename, rism_patch=False)
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    solute = {
-        "name": "F",
-        "charge": -1.0,
-        "sigma": 4.02,
-        "eps": 0.030963692
-    }
-    # sim = rsdft_1d(solute, solv0, params=params, quiet=True)
-    sim = rism_1d(solute, solv0, params=params, quiet=True)
-
-    rdf_peaks_dashboard(sim)
-    html_pane = results_dashboard(sim)
-    rdf_widget = rdf_dashboard(sim)
-    pmf_widget = pmf_dashboard(sim)
-    epot_widget = epot_dashboard(sim)
-    # xi_widget = xi_dashboard(sim)
-    # charts = pn.Tabs(("Density",rdf_widget),("PMF",pmf_widget),("Correlation Hole",xi_widget))
-    charts = pn.Tabs(("Density", rdf_widget), ("PMF", pmf_widget), ("Electric Potential", epot_widget))
-    # pn.Row(html_pane,charts).save("analysis.html")
-    pn.Row(html_pane, charts).show()
-    #
-    # rdf_widget.show()
-
-
-def multi_solute_test():
-
-    parameters = dict(diis_iterations=2, tol=1.0e-7, max_iter=200)
-    solvent_name = "s2"
-    filename = solvent_model_locate(solvent_name)
-    solvent = Solvent.from_file(filename, rism_patch=False)
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-
-    sim = []
-    values =  [5,8,10,12,15,20,25,30,35,40,45,50]
-    var = "sigma"
-    for v in values:
-        solute[var] = v
-        s = rsdft_1d(solute, solvent, params=parameters)
-        sim.append(s)
-
-    # multi_solute_peaks_dashboard("sigma", values, sim)
-    multi_solute_viz(var, values, sim, dashboard_dest="browser")
-
-if __name__ == '__main__':
-    multi_solute_test()

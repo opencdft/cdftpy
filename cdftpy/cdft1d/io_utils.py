@@ -34,6 +34,10 @@ def print_banner(title):
     print(title)
     print(dash)
 
+def get_banner(title):
+    dash = "-" * len(title)
+    return F"{dash}\n{title}\n{dash}"
+
 
 def iter_lines(fp):
     for line in fp:
@@ -227,21 +231,6 @@ def read_array(filename, section):
                     n = n + 1
 
         return a_k, kgrid
-
-
-def array_read(nv, ngrid, filename):
-    with open(filename, "r") as fp:
-        grid = np.zeros(shape=ngrid)
-        s_k = np.zeros(shape=(nv, ngrid), dtype=np.double)
-
-        for ig, line in enumerate(iter_lines(fp)):
-            row = list(map(float, line.split()))
-            grid[ig] = row[0]
-            n = 1
-            for i in range(nv):
-                s_k[i, ig] = row[i + 1]
-
-        return s_k
 
 
 def find_section(section, fp):

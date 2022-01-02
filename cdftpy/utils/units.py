@@ -14,6 +14,7 @@ nav = 6.02214076e+23
 # Molar gas constant 0.008314462618 kJ/(mol*K)
 # R = 0.008314462618
 R = 0.00831446  # Gennady's value
+kb = 0.00831446  # Gennady's value
 
 # Bohr radius 0.529177210903 Å
 bohr = 0.529177210903

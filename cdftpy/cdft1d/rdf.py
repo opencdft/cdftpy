@@ -4,11 +4,8 @@
 RDF analysis module
 """
 import os
-
-import numpy as np
 from scipy.signal import argrelmax
 from scipy.signal import argrelmin
-
 from cdftpy.cdft1d.io_utils import print_banner
 
 
@@ -17,7 +14,7 @@ def analyze_rdf_peaks_sim(sim):
 
 
 def write_rdf_sim(sim, dirpath="./"):
-    write_rdf(sim.ifft, sim.solute.name, sim.solvent.aname, sim.h_r, dirpath=dirpath)
+    write_rdf(sim.ifft, sim.solute["name"], sim.solvent.aname, sim.h_r, dirpath=dirpath)
 
 
 def analyze_rdf_peaks(ifft, nametag, h_r):
@@ -26,10 +23,6 @@ def analyze_rdf_peaks(ifft, nametag, h_r):
     peaks = {}
     print_banner("Solvent density structure analysis")
     for i, name in enumerate(nametag):
-        # imax0 = np.argmax(h_r[i, :])
-        # imax = argrelmax(h_r[i, :], order=5)[0]
-        # # imax0 = imax[0]
-        # imax1 = imax[imax > imax0][0]
         imax_array = argrelmax(h_r[i, :], order=10)
         imax0 = imax_array[0][0]
         imax1 = imax_array[0][1]
@@ -53,12 +46,6 @@ def analyze_rdf_peaks(ifft, nametag, h_r):
             f"{name} 1st min position/height: {rgrid[imin0]:<.2f} {h_r[i, imin0] + 1:<.3f}  "
         )
         print("  ")
-
-        # imax_array = argrelmax(h_r[i, :], order=10)
-        # print(imax_array)
-        # i0 = imax_array[0][0]
-        # i1 = imax_array[0][1]
-        # print(F"max1={rgrid[i0]}  max2={rgrid[i1]} ")
 
     return peaks
 
