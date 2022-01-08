@@ -4,13 +4,6 @@ import ast
 import sys
 import numpy as np
 
-def print_solute(solute):
-    print("Solute:  {name} charge={charge} sigma={sigma} epsilon={eps}".format(**solute))
-
-def print_parameters(params):
-    print("Simulation parameters:")
-    for k, v in params.items():
-        print("  ", k, v)
 
 def print_simulation(solute, solvent_model, params):
     print("Solute:")
@@ -77,9 +70,7 @@ def read_solute(filename, section="solute"):
     sigma_list = []
     eps_list = []
     charge_list = []
-    x_list = []
-    y_list = []
-    z_list = []
+
 
     tag = f"<{section}>"
     with open(filename, "r") as fp:
@@ -94,20 +85,13 @@ def read_solute(filename, section="solute"):
             sigma_list.append(float(sigma))
             eps_list.append(float(eps))
             charge_list.append(float(charge))
-            if len(xyz) < 3:
-                xyz = [0] * 3
-            x_list.append(float(xyz[0]))
-            y_list.append(float(xyz[1]))
-            z_list.append(float(xyz[2]))
+
 
     return dict(
         name=np.array(name_list),
         sigma=np.array(sigma_list),
         eps=np.array(eps_list),
-        charge=np.array(charge_list),
-        x=np.array(x_list),
-        y=np.array(y_list),
-        z=np.array(z_list),
+        charge=np.array(charge_list)
     )
 
 
@@ -269,7 +253,3 @@ def find_section(section, fp):
 #     print(ds)
 #     ds.to_netcdf("test.nc", engine='h5netcdf')
 
-
-if __name__ == "__main__":
-    filename = "/Users/marat/codes/cdft-dev/data/input.dat"
-    print(read_solute(filename))

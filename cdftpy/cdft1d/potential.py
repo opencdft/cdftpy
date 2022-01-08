@@ -15,7 +15,7 @@ def compute_lj_potential(sig_solute, eps_solute, sig_solvent, eps_solvent, rgrid
     eps = eps_solute * eps_solvent
     eps = np.sqrt(eps)
 
-    sig = -0.5 * (sig_solute + sig_solvent)
+    sig = 0.5 * (sig_solute + sig_solvent)
 
     sig6 = sig ** 6
 
@@ -38,7 +38,7 @@ def compute_lj_potential_mod(sig_solute, eps_solute, sig_solvent, eps_solvent, r
     eps = eps_solute * eps_solvent
     eps = np.sqrt(eps)
 
-    sig = -0.5 * (sig_solute + sig_solvent)
+    sig = 0.5 * (sig_solute + sig_solvent)
 
     sig6 = sig ** 6
     sig6[1] = 0

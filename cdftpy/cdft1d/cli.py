@@ -18,11 +18,12 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.validation import Validator
 
-from cdftpy import __version__
+from cdftpy.cdft1d._version import __version__
 from cdftpy.cdft1d.config import DATA_DIR
 from cdftpy.cdft1d.workflow import cdft1d_single_point, cdft1d_multi_solute
+from cdftpy.cdft1d.simulation import RUNNERS
 
-
+KNOWN_METHODS = [k for k in RUNNERS.keys()]
 def validate_adjust(ctx, param, value):
     for v in value:
         if v[0] not in ["charge","sigma","eps"]:
@@ -186,31 +187,33 @@ def cdft1d_generate_input():
 # noinspection PyTypeChecker
 @click.command()
 @click.argument("input_file", default="")
-@click.option("-m", "--method", default='rsdft',
-              type=click.Choice(['rism', 'rsdft'], case_sensitive=False),
+@click.option("-m", "--method", default=None,
+              type=click.Choice(KNOWN_METHODS, case_sensitive=True),
               show_default=False,
               help="Calculation method (default:rsdft)")
-@click.option("-s", "--solvent", "solvent_model", default='s2', type=str,
+@click.option("-s", "--solvent", "solvent_model", default=None, type=str,
               metavar="<solvent model>",
               show_default=True,
               help="solvent model")
+@click.option("-o", "--output",  is_flag=True, help="generate data output")
+@click.option("-a","--adjust", multiple=True, type=(str, float), callback=validate_adjust,
+              metavar='[charge|sigma|eps] <value>',
+              help="adjust solute parameters")
+@click.option("-r", "--range", "scan", default=None, type=(str, str),
+              callback=validate_range,
+              metavar='[charge|sigma|eps] "<values>" ',
+              help="""Run calculation over the range of solute "charge","sigma","eps" values. Values could specified as
+                    comma separated sequence (e.g. "0,0.5,1.0") or in triplets notation [start]:stop:nsteps. To avoid 
+                    issues with blank spaces, it is recommended that values are enclosed in double quotes.
+                   """)
 @click.option("-d", "--dashboard", is_flag=False, flag_value="browser", default=None,
               metavar="[filename]",
               type=click.Path(),
               help="Generate dashboard for analysis. The dashboard will be saved as html file "
                    "under the name provided by optional argument. In the absence of the latter "
                    "dashboard will be open in browser")
-@click.option("-r", "--range", "scan", default=None, type=(str, str),
-              callback=validate_range,
-              metavar='[charge|sigma|eps] <values>',
-              help="""Run calculation over the range of solute "charge","sigma","eps" values. Values could specified as
-                    array (e.g. [0,0.5,...] or in triplets notation [start]:stop:nsteps
-                   """)
-@click.option("-a","--adjust", multiple=True, type=(str, float), callback=validate_adjust,
-              metavar='[charge|sigma|eps] <value>',
-              help="adjust solute parameters")
 @click.option("--version", is_flag=True, help="display version")
-def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust):
+def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust, output):
     """
     Perform CDFT calculation
 
@@ -230,19 +233,32 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust
         else:
             sys.exit(1)
 
+    if output:
+        output="density"
+    else:
+        output=None
+
     if scan is not None:
         var = scan[0]
         seq = scan[1]
-        cdft1d_multi_solute(input_file, method, solvent_model, var,
+        cdft1d_multi_solute(input_file, var,
+                            method=method,
+                            solvent=solvent_model,
                             values=seq["values"],
                             stop=seq["stop"],
                             nsteps=seq["nsteps"],
                             start=seq["start"],
-                            dashboard=dashboard
+                            dashboard=dashboard,
+                            output=output
                             )
 
     else:
-        cdft1d_single_point(input_file, method, solvent_model, dashboard=dashboard, adjust=adjust)
+        cdft1d_single_point(input_file,
+                            method=method,
+                            solvent=solvent_model,
+                            dashboard=dashboard,
+                            adjust=adjust,
+                            output=output)
 
 
 

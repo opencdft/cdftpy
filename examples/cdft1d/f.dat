@@ -2,11 +2,5 @@
  # site   sigma        eps(kj/mol)    charge(e)    x   y   z
  F       4.02          0.030963692     -1.0         0.0 0.0 0.0
  <simulation>
- solvent s2
  tol 1.0E-7
  max_iter 2000
- #optional analysis
- <analysis>
- rdf_peaks
- <output>
- rdf

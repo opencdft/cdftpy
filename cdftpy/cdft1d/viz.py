@@ -15,9 +15,6 @@ import panel as pn
 from prettytable import PrettyTable, PLAIN_COLUMNS
 
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
-from cdftpy.cdft1d.rism import rism_1d
-from cdftpy.cdft1d.rsdft import rsdft_1d
-from cdftpy.cdft1d.solvent import solvent_model_locate, Solvent
 
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
@@ -46,7 +43,7 @@ def epot_dashboard(sim):
     rho_0 = sim.solvent.density
     rho = rho_0 * np.einsum("a,an->n", qv, sim.h_r + 1)
 
-    r = sim.ifft.rgrid
+    r = sim.rgrid
 
     epot_plot = []
     xlim = r[-1] / 2
@@ -70,7 +67,7 @@ def multi_solute_rdf_dashboard(var, values, sim):
             pk = analyze_rdf_peaks_sim(s)
             xlim = int(max(xlim, pk[aname]["second_peak"][1] * 2))
             rdf = s.h_r[i, :] + 1
-            r = s.ifft.rgrid
+            r = s.rgrid
             curve = hv.Curve((r, rdf[:]), 'r', '\u03C1/\u03C1₀',
                              group=F"Solvent Density for {aname}", label=F"{var}={values[j]}")
             curve.opts(fontsize={'legend': 6})
@@ -87,7 +84,7 @@ def multi_solute_energy_dashboard(var, values, sim):
     e = []
     for s in sim:
         e.append(s.fe_tot)
-        r = s.ifft.rgrid
+        r = s.rgrid
     eref = e[0]
     ediff = [(x - eref) / 4.184 for x in e]
     e_plot = hv.Curve((values, ediff), F"{var}", 'Free Energy (kcal/mol)', group=F"Free Energy")
@@ -169,7 +166,7 @@ def multi_solute_peaks_dashboard(var, values, sim):
 
 def rdf_dashboard(sim):
     rdf = sim.h_r + 1
-    r = sim.ifft.rgrid
+    r = sim.rgrid
 
     pk = analyze_rdf_peaks_sim(sim)
 
@@ -215,7 +212,7 @@ def rdf_peaks_dashboard(sim):
 def xi_dashboard(sim):
     xi = sim.xi_r
     f = sim.f_r
-    r = sim.ifft.rgrid
+    r = sim.rgrid
 
     aname = sim.solvent.aname
     pk = analyze_rdf_peaks_sim(sim)
@@ -256,7 +253,7 @@ def pmf_dashboard(sim):
     beta = sim.beta
     rdf = sim.h_r + 1
 
-    r = sim.ifft.rgrid
+    r = sim.rgrid
 
     pk = analyze_rdf_peaks_sim(sim)
 
@@ -283,9 +280,9 @@ def pmf_dashboard(sim):
 
 def results_dashboard(sim):
     fe_tot = sim.fe_tot.round(3)
-    solute = sim.solute
-    solute_txt = F"{solute['name']} charge={solute['charge']} " \
-                 F"sigma={solute['sigma']} Å epsilon={solute['eps']} kj/mol"
+
+    solute_txt = F"{sim.name} charge={sim.charge} " \
+                 F"sigma={sim.sigma} Å epsilon={sim.eps} kj/mol"
     solvent = sim.solvent
     s = solvent.to_string()
 
@@ -309,9 +306,8 @@ def results_dashboard(sim):
 
 def multi_solute_results_dashboard(sim):
     s = sim[0]
-    solute = s.solute
-    solute_txt = F"{solute['name']} charge={solute['charge']} " \
-                 F"sigma={solute['sigma']} Å epsilon={solute['eps']} kj/mol"
+    solute_txt = F"{s.name} charge={s.charge} " \
+                 F"sigma={s.sigma} Å epsilon={s.eps} kj/mol"
     solvent = s.solvent
 
     solv_txt = solvent.to_string()

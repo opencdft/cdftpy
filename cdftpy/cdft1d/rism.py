@@ -9,14 +9,13 @@ import sys
 
 import numpy as np
 
-from cdftpy import __version__
+from cdftpy.cdft1d._version import __version__
 from cdftpy.cdft1d import simulation
 from cdftpy.cdft1d.coulomb import compute_coulomb_potential
 
 from cdftpy.cdft1d.diis import diis_session
 from cdftpy.cdft1d.exceptions import ConvergenceError
 from cdftpy.cdft1d.io_utils import print_banner, get_banner
-from cdftpy.cdft1d.solvent import solvent_model_locate, Solvent
 from cdftpy.utils.units import R
 
 from cdftpy.cdft1d.loggers import get_stream_logger
@@ -70,7 +69,8 @@ def rism_1d(sim, quiet=True, capture=True):
     gl_k = -np.einsum("abn,bn->an", s_k, vl_k)
     gl_r = np.apply_along_axis(ifft.to_rspace, 1, gl_k)
 
-    g_r = np.zeros(hbar[0].shape)
+    # g_r = np.zeros(hbar[0].shape)
+    g_r = np.array(gl_r)
 
     logger.info(get_banner("   Self-consistent cycle     "))
 
@@ -116,7 +116,7 @@ def rism_1d(sim, quiet=True, capture=True):
         )
         if capture:
             print(streamer.getvalue())
-        raise ConvergenceError(F"RISM calculation.\n Try increasing diis_iterations")
+        raise ConvergenceError(F"RISM calculation.\n Try increasing ndiis")
 
     logger.info("\n")
     logger.info(f"{'Total Free Energy ':<30} {fe:>12.6f}")
@@ -127,6 +127,7 @@ def rism_1d(sim, quiet=True, capture=True):
 
     sim.fe_tot = fe
     sim.h_r = h_r
+    sim.g_r = g_r
 
     if streamer is not None:
         sim.log = streamer.getvalue()
@@ -144,17 +145,3 @@ def compute_free_energy(beta, rho_0, ifft, vl_r, g_r, h_r, c_r):
     return fe_tot, (fe_tot - fe1, fe1)
 
 
-if __name__ == "__main__":
-
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    solute = dict(name="Cl", charge=-1.0, sigma=50, eps=0.05349244)
-    params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200, rmax=500)
-
-    sim = simulation.SolvatedIon(solute=solute, solvent="s2", params=params, method="rism")
-
-    rism_1d(sim, quiet=True)
-    print(sim.log)
-
-    fe_tot = sim.fe_tot
-
-    print(fe_tot+265.724375)

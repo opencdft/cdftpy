@@ -1,11 +1,10 @@
 <geometry>
 # site   type   x     y     z
-N1        N     0     0     0 
-N2        N   1.1345  0     0 
+N1        N     0     0     0
+N2        N   1.1345  0     0
 
 <interactions>
 #type        sigma      eps        charge
- N          3.2513     0.7113     0.0
  N          3.2513     0.7113     0.0
 <state>
 density 0.022016

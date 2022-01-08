@@ -7,6 +7,9 @@ H        H     1.3  0     0
 #type        sigma      eps        charge
  Cl          3.353      2.15      0.0
   H          0.000178   0.166     0.0
+<rism_patch>
+# type       sigma        eps(kj/mol)
+   HW        1.0          0.166
 <state>
 density 0.02337
 temp 300

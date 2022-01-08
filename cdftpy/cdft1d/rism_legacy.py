@@ -23,7 +23,7 @@ from cdftpy.cdft1d.rdf import write_rdf_sim
 from cdftpy.cdft1d.solvent import solvent_model_locate, Solvent
 from cdftpy.utils.units import R
 
-from cdftpy import __version__
+from cdftpy.cdft1d._version import __version__
 
 HEADER = F"""
 ==================================
@@ -201,24 +201,3 @@ def compute_free_energy(beta, rho_0, ifft, qs, qv, c_k, h_r, h_k, vl_r, g_r):
 
     return SimpleNamespace(total=f_total, surface=f_surf, volume=f_vol, coulomb=f_coul)
 
-
-if __name__ == "__main__":
-
-    # load solvent model
-    solvent_name = "s2"
-
-
-    filename = solvent_model_locate(solvent_name)
-
-    filename0 = "/Users/marat/codes/cdft/spce-test/s2-0.2.smdl"
-    solv = Solvent.from_file(filename, rism_patch=True)
-
-
-    solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
-    params = dict(diis_iterations=2, tol=1.0e-7, max_iter=200)
-
-    sim = rism_1d(solute, solv, params=params, verbose=False)
-
-    analyze_rdf_peaks_sim(sim)
-
-    write_rdf_sim(sim)

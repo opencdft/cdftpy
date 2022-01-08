@@ -11,8 +11,7 @@ import numpy as np
 from prettytable import PrettyTable, PLAIN_COLUMNS
 
 from cdftpy.cdft1d.io_utils import read_key_value, print_banner
-from cdftpy.cdft1d.io_utils import read_solute
-from cdftpy.cdft1d.simulation import SolvatedIon
+from cdftpy.cdft1d.simulation import IonSolvation
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
 from cdftpy.cdft1d.rdf import write_rdf_sim
 from cdftpy.cdft1d.exceptions import ConvergenceError
@@ -29,21 +28,15 @@ def my_linspace(start, stop, nsteps):
     return list(map(lambda x: x.round(nr), values))
 
 
-def cdft1d_multi_solute(input_file, method, solvent_model, var,
+def cdft1d_multi_solute(input_file, var, method=None, solvent=None,
                         values=None,
                         stop=None,
-                        nsteps=11,
+                        nsteps=1,
                         start=None,
-                        dashboard=None
+                        dashboard=None,
+                        output=None
                         ):
-    try:
-        solute = read_solute(input_file)
-    except FileNotFoundError:
-        print(f"Cannot locate input file {input_file}")
-        sys.exit(1)
-
-    for k, v in solute.items():
-        solute[k] = v[0]
+    sim = IonSolvation.from_input_file(input_file, solvent=solvent, method=method)
 
     if values is None:
         if stop is None:
@@ -51,36 +44,34 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
             sys.exit(1)
 
         if start is None:
-            start = solute[var]
+            start = getattr(sim, var)
 
         values = my_linspace(start, stop, nsteps)
 
     if len(values) == 1:
-        adjust = [(var,values[0])]
+        adjust = [(var, values[0])]
         fe = cdft1d_single_point(input_file,
-                            method, solvent_model,
-                            dashboard=dashboard, adjust=adjust)
+                                 method=method, solvent=solvent,
+                                 dashboard=dashboard, adjust=adjust,
+                                 output=output)
         return [fe]
-
-    parameters = read_key_value(input_file, section="simulation")
 
     sim_array = []
     fe_array = []
-
-    sim = SolvatedIon(solute=solute, solvent=solvent_model, params=parameters, method=method)
 
     print_level = {'header', 'parameters', 'solute', 'solvent'}
     print(sim.to_string(print_level=print_level))
     print(F"Performing calculation over the range of {var}s \n {values}")
 
-    for v in values:
-        sim.solute[var] = v
+    for i, v in enumerate(values):
+        setattr(sim, var, v)
+        print(F"{var}={v}")
         try:
-            print(F"{var}={v}")
             fe = sim.cdft()
             fe_array.append(fe)
             print(sim.log)
-
+            sim.write_density(postfix=f"_{i:02d}")
+            analyze_rdf_peaks_sim(sim)
         except ConvergenceError:
             print(F"cannot converge {var}={v} point")
             print("skipping the rest of the cycle")
@@ -94,7 +85,7 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
                        "Solvation Free Energy "]
     tbl.add_row([" ", "total (kj/mol)", "diff(kj/mol)"])
     fe_ref = fe_array[0]
-    for fe,v in zip(fe_array,values):
+    for fe, v in zip(fe_array, values):
         tbl.add_row([v, fe, fe - fe_ref])
     tbl.align = "r"
     tbl.float_format = ".3"
@@ -108,38 +99,21 @@ def cdft1d_multi_solute(input_file, method, solvent_model, var,
     return fe_array
 
 
-def cdft1d_single_point(input_file, method, solvent_model, dashboard=None, adjust=None):
-
-    try:
-        solute = read_solute(input_file)
-    except FileNotFoundError:
-        print(f"Cannot locate input file {input_file}")
-        sys.exit(1)
-
-    for k, v in solute.items():
-        solute[k] = v[0]
+def cdft1d_single_point(input_file, solvent=None, method=None, dashboard=None, adjust=None, output=None):
+    sim = IonSolvation.from_input_file(input_file, solvent=solvent, method=method)
 
     if adjust is not None:
         for par_val in adjust:
             par, val = par_val
-            solute[par] = float(val)
-
-    parameters = read_key_value(input_file, section="simulation")
-
-    sim = SolvatedIon(solute=solute, solvent=solvent_model, params=parameters, method=method)
+            setattr(sim, par, val)
     print(sim.to_string())
 
     fe = sim.cdft(quiet=False)
 
-    analysis = read_key_value(input_file, section="analysis")
-    if analysis is not None:
-        if "rdf_peaks" in analysis:
-            analyze_rdf_peaks_sim(sim)
+    analyze_rdf_peaks_sim(sim)
 
-    output = read_key_value(input_file, section="output")
-    if output is not None:
-        if "rdf" in output:
-            write_rdf_sim(sim)
+    if output == "density":
+        sim.write_density()
 
     if dashboard is not None:
         single_point_viz(sim, dashboard_dest=dashboard)

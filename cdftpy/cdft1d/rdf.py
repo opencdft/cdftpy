@@ -14,7 +14,7 @@ def analyze_rdf_peaks_sim(sim):
 
 
 def write_rdf_sim(sim, dirpath="./"):
-    write_rdf(sim.ifft, sim.solute["name"], sim.solvent.aname, sim.h_r, dirpath=dirpath)
+    write_rdf(sim.ifft, sim.name, sim.solvent.aname, sim.h_r, dirpath=dirpath)
 
 
 def analyze_rdf_peaks(ifft, nametag, h_r):

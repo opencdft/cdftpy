@@ -34,10 +34,3 @@ def get_stream_logger(name, capture=True, quiet = False, debug=False):
 
     return logger, streamer
 
-logger = logging.getLogger(__name__)
-logger.propagate = False
-log_handler = logging.StreamHandler()
-log_format = logging.Formatter('%(message)s')
-log_handler.setFormatter(log_format)
-logger.addHandler(logging.NullHandler())
-logger.addHandler(log_handler)

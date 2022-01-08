@@ -1,4 +1,5 @@
 import inspect
+import os
 import sys
 import traceback
 from io import StringIO
@@ -9,16 +10,18 @@ import numpy as np
 from cdftpy.cdft1d.coulomb import compute_long_range_coul_pot_kspace, compute_long_range_coul_pot_rspace, \
     compute_short_range_coul_pot_rspace, compute_coulomb_potential
 from cdftpy.cdft1d.exceptions import ConvergenceError
+from cdftpy.cdft1d.io_utils import read_solute, read_key_value
 from cdftpy.cdft1d.potential import compute_lj_potential_mod, compute_lj_potential
 from cdftpy.utils.units import kb
 import cdftpy.cdft1d.rism as rism
 import cdftpy.cdft1d.rsdft as rsdft
-from cdftpy.cdft1d.solvent import Solvent, solvent_model_locate
-from cdftpy import __version__
+from cdftpy.cdft1d.solvent import Solvent
+from cdftpy.cdft1d._version import __version__
 
-DEFAULT_PRINT_LEVEL=frozenset(['parameters','solvent','solute','header'])
-DEFAULT_PARAMS = dict(diis_iterations=2, tol=1.0e-9, output_rate=10, max_iter=200, rcoul=1.25, method="rsdft")
-
+DEFAULT_PRINT_LEVEL = frozenset(['parameters', 'solvent', 'solute', 'header'])
+DEFAULT_PARAMS = dict(ndiis=2, tol=1.0e-7, output_rate=10, max_iter=200, rcoul=1.25,
+                      rmax=None, solvent='s2', method='rsdft')
+RUNNERS = dict(rsdft=rsdft.rsdft_1d, rism=rism.rism_1d)
 HEADER = F"""
 ==================================
 1D CDFT PROGRAM
@@ -28,49 +31,89 @@ Marat Valiev and Gennady Chuev
 ==================================
 """
 
-class SolvatedIon():
+
+class IonSolvation():
 
     def __init__(self,
-                 method="rsdft",
-                 params=None,
-                 solute=None,
-                 solvent=None):
+                 name="ion",
+                 charge=None,
+                 sigma=None,
+                 eps=None,
+                 **params):
+
+        self.name = name
+        if charge is None:
+            print("Charge has to be provided")
+            raise ValueError
+        else:
+            self.charge = charge
+        if sigma is None:
+            print("Sigma has to be provided")
+            raise ValueError
+        else:
+            self.sigma = sigma
+        if eps is None:
+            print("Sigma has to be provided")
+            raise ValueError
+        else:
+            self.eps = eps
 
         self._solvent = None
-        self.method = method
 
-        if params is None:
+        if params == {}:
             params = DEFAULT_PARAMS
         params = {**DEFAULT_PARAMS, **params}
 
-        self.ndiis = int(params["diis_iterations"])
+        self.method = params['method']
+        self.ndiis = int(params["ndiis"])
         self.rcoul = float(params["rcoul"])
         self.tol = float(params["tol"])
         self.max_iter = int(params["max_iter"])
         self.output_rate = int(params["output_rate"])
-        if "temp" in params:
-            self.temp = float(params["temp"])
-            self.beta = 1.0 / (kb * temp)
-        else:
-            self.temp = None
-            self.beta = None
+        self.rmax = params['rmax']
 
-        if "rmax" in params:
-            self.rmax = float(params["rmax"])
-        else:
-            self.rmax = None
+        if self.rmax is not None:
+            self.rmax = float(self.rmax)
 
-        self.solute = solute
+        self.temp = None
+        self.beta = None
 
+        solvent = params['solvent']
         if solvent is not None:
             if isinstance(solvent, str):
-                rism_patch = (method == "rism")
+                rism_patch = (self.method == "rism")
                 self.solvent = Solvent.from_name(solvent, rism_patch=rism_patch)
             else:
                 self.solvent = solvent
 
         self.log = None
         self.h_r = None
+
+        self.bridge = False
+    @classmethod
+    def from_input_file(cls, input_file, solvent=None, method=None):
+
+        try:
+            solute = read_solute(input_file)
+        except FileNotFoundError:
+            print(f"Cannot locate input file {input_file}")
+            sys.exit(1)
+
+        for k, v in solute.items():
+            solute[k] = v[0]
+
+        parameters = read_key_value(input_file, section="simulation")
+        if parameters is None:
+            parameters = DEFAULT_PARAMS
+        parameters = {**DEFAULT_PARAMS, **parameters}
+
+        if solvent is not None:
+            parameters['solvent'] = solvent
+        if method is not None:
+            parameters['method'] = method
+
+        return cls(**solute, **parameters)
+
     @property
     def solvent(self):
         return self._solvent
@@ -95,28 +138,27 @@ class SolvatedIon():
 
     @property
     def vl_k(self):
-        vl_k = compute_long_range_coul_pot_kspace(self.solute["charge"], self.qv,
+        vl_k = compute_long_range_coul_pot_kspace(self.charge, self.qv,
                                                   self.kgrid, r_s=self.rcoul)
         return self.beta * vl_k
 
     @property
     def vl_r(self):
-        vl_r = compute_long_range_coul_pot_rspace(self.solute["charge"], self.qv,
+        vl_r = compute_long_range_coul_pot_rspace(self.charge, self.qv,
                                                   self.rgrid, r_s=self.rcoul)
         return self.beta * vl_r
 
     @property
     def vs_r(self):
-        vcs_r = compute_short_range_coul_pot_rspace(self.solute["charge"], self.qv,
+        vcs_r = compute_short_range_coul_pot_rspace(self.charge, self.qv,
                                                     self.rgrid, r_s=self.rcoul)
-        if self.method == "rsdft":
-            vlj_r = compute_lj_potential_mod(self.solute['sigma'], self.solute['eps'], self.sig_v, self.eps_v, self.rgrid)
+        if self.bridge:
+            vlj_r = compute_lj_potential_mod(self.sigma, self.eps, self.sig_v, self.eps_v, self.rgrid)
         else:
-            vlj_r = compute_lj_potential(self.solute['sigma'], self.solute['eps'], self.sig_v, self.eps_v, self.rgrid)
+            vlj_r = compute_lj_potential(self.sigma, self.eps, self.sig_v, self.eps_v, self.rgrid)
         vs_r = vcs_r + vlj_r
 
         return self.beta * vs_r
-
 
     @property
     def ifft(self):
@@ -162,9 +204,9 @@ class SolvatedIon():
         if 'header' in print_level:
             print(HEADER)
         if 'solute' in print_level:
-            print(F"Solute:  {self.solute['name']} charge={self.solute['charge']} "
-                  F"sigma={self.solute['sigma']} "
-                  F"epsilon={self.solute['eps']}", file=sp)
+            print(F"Solute:  {self.name} charge={self.charge} "
+                  F"sigma={self.sigma} "
+                  F"epsilon={self.eps}", file=sp)
         if 'parameters' in print_level:
             buffer = F"Parameters: \n" \
                      F"  method: {self.method}\n" \
@@ -180,13 +222,10 @@ class SolvatedIon():
         return sp.getvalue()
 
     def cdft(self, quiet=True):
+
+        fe = None
         try:
-            if self.method == "rism":
-                fe = rism.rism_1d(self,quiet=quiet)
-                return fe
-            elif self.method == "rsdft":
-                fe = rsdft.rsdft_1d(self,quiet=quiet)
-                return fe
+            fe = RUNNERS[self.method](self, quiet=quiet)
         except ConvergenceError as e:
             print(e)
             sys.exit(1)
@@ -197,6 +236,8 @@ class SolvatedIon():
             sys.exit(1)
         except BaseException as e:
             raise e
+        return fe
+
     @property
     def epot_r(self):
         ifft = self.solvent.ifft
@@ -209,22 +250,23 @@ class SolvatedIon():
         pre_message = "It seems that"
         if self.solvent is None:
             print(f"{pre_message} solvent has not been defined")
-        if self.solute is None:
-            print(f"{pre_message} solute has not been defined")
 
-if __name__ == '__main__':
-    solvent_name = "s2"
-    filename = solvent_model_locate(solvent_name)
-    solvent = Solvent.from_file(filename)
-    solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    # solute = dict(name="Cl", charge=-1.0, sigma=60, eps=0.05349244)
-    params = dict(diis_iterations=2, tol=1.0e-7, max_iter=500)
+    def write_density(self,postfix="",dirpath="./"):
 
-    sim = SolvatedIon(solvent=solvent, params=params, method="rism")
+        filename = os.path.join(dirpath, f"density{postfix}.dat")
+        with open(filename, "w") as fp:
+            fp.write("# site density data\n")
+            fp.write(f"# {self.name} charge={self.charge} "
+                     F"sigma={self.sigma}  "
+                     F"epsilon={self.eps}  "
+                     F"solvent={self.solvent.model}\n")
+            fp.write(f"{'# rgrid':<10} ")
+            for tag in self.solvent.aname:
+                fp.write(f"{self.name}-{tag}   ")
+            fp.write("\n")
+            for j in range(len(self.rgrid)):
+                fp.write(f"{self.rgrid[j]}  ")
+                for i in range(len(self.solvent.aname)):
+                    fp.write(f"{self.h_r[i,j]+1.0}  ")
+                fp.write("\n")
 
-    # sim.solvent = solvent
-    # sim = SolvatedIon(solute=solute, solvent="s2", params=params, method="rism")
-    fe=sim.cdft()
-    print(sim.to_string())
-    # print(F"Free energy of solvation {fe:.3f} kj/mol")
-    #

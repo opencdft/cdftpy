@@ -1,0 +1,82 @@
+{
+  "Na+": {
+"O":{
+  "first_peak_value": 6.3,
+  "first_peak_pos": 2.46
+},
+    "H":{
+  "first_peak_value": 3.0,
+  "first_peak_pos": 3.36
+}
+  },
+  "Li+": {
+"O":{
+  "first_peak_value": 8.8,
+  "first_peak_pos": 2.11
+},
+    "H":{
+  "first_peak_value":3.8 ,
+  "first_peak_pos": 3.02
+}
+  },
+  "K+": {
+"O":{
+  "first_peak_value": 4.9,
+  "first_peak_pos": 2.81
+},
+    "H":{
+  "first_peak_value": 2.7,
+  "first_peak_pos": 3.66
+}
+  },
+  "Cs+": {
+"O":{
+  "first_peak_value": 4.1,
+  "first_peak_pos": 3.01
+},
+    "H":{
+  "first_peak_value": 2.4,
+  "first_peak_pos": 3.86
+}
+  },
+  "F-": {
+"O":{
+  "first_peak_value": 7.8,
+  "first_peak_pos": 2.66
+},
+    "H":{
+  "first_peak_value":18.1 ,
+  "first_peak_pos": 1.66
+}
+  },
+  "Cl-": {
+"O":{
+  "first_peak_value": 4.4,
+  "first_peak_pos": 3.1
+},
+    "H":{
+  "first_peak_value": 8.2,
+  "first_peak_pos": 2.11
+}
+  },
+  "Br-": {
+"O":{
+  "first_peak_value": 3.7,
+  "first_peak_pos": 3.22
+},
+    "H":{
+  "first_peak_value": 6.5,
+  "first_peak_pos": 2.26
+}
+  },
+  "I-": {
+"O":{
+  "first_peak_value": 3.03,
+  "first_peak_pos": 3.46
+},
+    "H":{
+  "first_peak_value":4.7 ,
+  "first_peak_pos": 2.46
+}
+  }
+}

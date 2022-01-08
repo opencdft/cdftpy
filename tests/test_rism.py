@@ -4,20 +4,20 @@
 
 import pytest
 
-from cdftpy.cdft1d.simulation import SolvatedIon
+from cdftpy import IonSolvation
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
 
 def test_rism_cation():
 
     solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
-    params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200)
+    params = dict(ndiis=2, tol=1.0E-7, max_iter=200)
 
-    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rism")
+    sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
 
-    fe_ref = -315.65631175156324
+    fe_ref = -315.6560905213441
 
-    assert sim.fe_tot == pytest.approx(fe_ref, rel=1e-12)
+    assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 
     pk = analyze_rdf_peaks_sim(sim)
 
@@ -37,14 +37,14 @@ def test_rism_cation():
 def test_rism_cation_rmax():
 
     solute = dict(name="Na", charge=1.0, sigma=2.16, eps=1.4755)
-    params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200, rmax=500)
+    params = dict(ndiis=2, tol=1.0E-7, max_iter=200, rmax=500)
 
-    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rism")
+    sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
 
-    fe_ref = -315.657032
+    fe_ref = -315.65718693067294
 
-    assert sim.fe_tot == pytest.approx(fe_ref, rel=1e-8)
+    assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 
     pk = analyze_rdf_peaks_sim(sim)
 
@@ -64,13 +64,13 @@ def test_rism_cation_rmax():
 def test_rism_anion():
 
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200)
+    params = dict(ndiis=2, tol=1.0E-7, max_iter=200)
 
-    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rism")
+    sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
-    fe_ref = -265.72210193862884
+    fe_ref = -265.7216619843735
 
-    assert sim.fe_tot == pytest.approx(fe_ref, rel=1e-12)
+    assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 
     pk = analyze_rdf_peaks_sim(sim)
 
@@ -90,13 +90,13 @@ def test_rism_anion():
 def test_rism_anion_rmax():
 
     solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    params = dict(diis_iterations=2, tol=1.0E-7, max_iter=200, rmax=500)
+    params = dict(ndiis=2, tol=1.0E-7, max_iter=200, rmax=500)
 
-    sim = SolvatedIon(solute=solute, params=params, solvent="s2", method="rism")
+    sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
-    fe_ref = -265.724375
+    fe_ref = -265.7230396386633
 
-    assert sim.fe_tot == pytest.approx(fe_ref, rel=1e-8)
+    assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 
     pk = analyze_rdf_peaks_sim(sim)
 

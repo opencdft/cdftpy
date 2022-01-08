@@ -343,10 +343,3 @@ def extend(solvent0, rmax):
         return solvent
 
     return solvent0
-
-if __name__ == "__main__":
-
-    solvent_name = "s2"
-    filename = solvent_model_locate(solvent_name)
-    slv0 = Solvent.from_file(filename, rism_patch=True)
-    print(slv0.to_string())

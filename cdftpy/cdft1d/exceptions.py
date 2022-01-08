@@ -5,10 +5,3 @@ class ConvergenceError(Exception):
         else:
             message = F"Convergence error: {message}"
         super().__init__(message)
-
-    # def __str__(self):
-    # #     print('calling str')
-    #     if self.message:
-    #         return 'Convergence error, {0} '.format(self.message)
-    #     else:
-    #         return 'Convergence error'

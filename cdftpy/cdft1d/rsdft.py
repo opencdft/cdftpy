@@ -16,11 +16,9 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 import numpy as np
 
 from cdftpy.cdft1d.diis import diis_session
-from cdftpy.cdft1d.io_utils import print_banner, get_banner
+from cdftpy.cdft1d.io_utils import get_banner
 
-from cdftpy.cdft1d.solvent import Solvent, solvent_model_locate, Molecule1
-
-from cdftpy import __version__
+from cdftpy.cdft1d._version import __version__
 
 
 PI = np.pi
@@ -38,7 +36,7 @@ Marat Valiev and Gennady Chuev
 """
 
 
-def rsdft_1d(sim, quiet=True, capture=True):
+def rsdft_1d(sim, quiet=True, capture=True, bridge=False):
 
     logger, streamer = get_stream_logger(__name__,
                                          capture=capture,
@@ -65,7 +63,10 @@ def rsdft_1d(sim, quiet=True, capture=True):
 
     gl_r, gl_k = compute_gamma_long_range(ifft, hbar, sm, vl_k, vl_r, zeta)
 
-    g_r = np.zeros(hbar[0].shape)
+    # initial guess for gamma
+    # g_r = np.zeros(hbar[0].shape)
+    g_r = np.array(gl_r)
+
 
     logger.info(get_banner("   Self-consistent cycle     "))
 
@@ -238,18 +239,3 @@ def compute_free_energy(beta, rho_0, ifft, vl_r, g_r, h_r, c_k):
     fe_tot = fe0 - fe1
     return fe_tot, (fe_tot - fe1, fe1)
 
-
-if __name__ == "__main__":
-
-    start_time = time.process_time()
-    _solute = dict(name="Cl", charge=-1.0, sigma=4.83, eps=0.05349244)
-    _params = dict(diis_iterations=2, tol=1.0e-7, max_iter=500, rmax=200)
-
-    sim = model.SolvatedIon(solute=_solute, solvent="s2", params=_params)
-
-    rsdft_1d(sim, quiet=True)
-
-    print(sim.fe_tot + 296.930977)
-    print(sim.log)
-    t = time.process_time() - start_time
-    print(t)
