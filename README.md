@@ -17,19 +17,16 @@ cdft1d <input_file>
 where example input file for Cl- ion is given by
 ```
 <solute>
-# site   sigma        eps(kj/mol)    charge(e)    x   y   z
-Cl       4.83         0.05349244     -1.0         0.0 0.0 0.0
-
+#name   sigma(A)        eps(kj/mol)    charge(e)  
+  Cl       4.83         0.05349244     -1.0      
 <simulation>
-tol 1.0E-7
-max_iter 200
-rmax 100
-
-<analysis>
-rdf_peaks
-
-<output>
-rdf
+  solvent s2
+  method rsdft
+  tol 1.0E-7
+  max_iter 200
+  output_rate 10
+  rcoul 1.25
+  rmax 100
 ```
 The output will contain solvation free energy as well as peak
 analysis of solvent density around the ion, e.g.
@@ -69,40 +66,37 @@ can be run as
 ___
 #### General usage:
 ___
-    cdft1d [OPTIONS] [INPUT_FILE]
+```
+Usage: cdft1d [OPTIONS] INPUT_FILE
 
-
-
-    Options:
-
-      -m, --method [rism|rsdft]
-        Define calculation method, with rsdft as a default
-
-      -s, --solvent <solvent_model>
-        Define solvent_model with default as s2. 
-        Other avaialble models include hcl, n2, hcl_neutral.
-        An additional model restricted to RISM is spce.
-
-      -a, --adjust [charge|sigma|eps] <value>
-        Adjust solute charge, sigma, or eps parameters
-
-      -d, --dashboard [filename]      
-        Generate dashboard for analysis. 
-        The dashboard will be saved under the [filename] if provided, 
-        otherwise it will be open in browser window
-
-      -r --range [charge|sigma|eps] <values>
-        Run calculation over the range of solute "charge","sigma",or "eps" 
-        parameter values. Values could specified as comma
-        delimited array ( e.g. 0,0.5,...)
-        or in triplets notation [start:]stop:nsteps
-
-      --help                     
-         Show help message
-
-      --version                  
-         Display version
-
+Options:
+  -m, --method [rism|rsdft]       
+    Calculation method (default:rsdft)
+  -s, --solvent <solvent model>   
+    solvent model  [default: s2]
+  -a, --adjust [charge|sigma|eps] <value>
+    adjust solute parameters
+  -r, --range [charge|sigma|eps] <values>
+    Run calculation over the range of solute
+    "charge","sigma","eps" values. Values could
+    specified as comma separated sequence (e.g.
+    0,0.5,..) or in triplets notation
+    [start]:stop:nsteps. To avoid  issues with
+    blank spaces, it is recommended that values
+    are enclosed in double quotes.
+  -o, --output
+    generate data output (currently only site density)
+  -d, --dashboard [filename]      
+    Generate dashboard for analysis. 
+    The dashboard will be saved as html file 
+    under the name provided by optional argument. 
+    In the absence of the latter dashboard will be
+    open in browser
+  --version                       
+    display version and exit
+  --help                         
+    Show this message and exit
+```
 ___
 #### References:
 ___

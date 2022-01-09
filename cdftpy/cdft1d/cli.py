@@ -137,8 +137,6 @@ def cdft1d_generate_input():
             )
             sigma = prompt("  \u03C3 (Å): ", validator=validator, default=default_sigma)
 
-            rdf_analysis = prompt("RDF Analysis y/n?:") == "y"
-            rdf_output = prompt("RDF Output y/n?: ") == "y"
 
             while 1:
                 input_file = prompt(
@@ -165,12 +163,6 @@ def cdft1d_generate_input():
                 fp.write(f" {name}  {sigma} {eps} {charge} \n")
                 fp.write("<simulation>\n")
                 fp.write(f"solvent {solvent}\n")
-                if rdf_analysis:
-                    fp.write(f"<analysis>\n")
-                    fp.write(f"rdf_peaks\n")
-                if rdf_output:
-                    fp.write(f"<output>\n")
-                    fp.write(f"rdf\n")
 
             print(f"Generated input file {input_file}")
 
