@@ -7,8 +7,6 @@ import logging
 import time
 
 from cdftpy.cdft1d.exceptions import ConvergenceError
-
-import cdftpy.cdft1d.simulation as model
 from cdftpy.cdft1d.loggers import get_stream_logger
 
 logging.getLogger('matplotlib').setLevel(logging.WARNING)

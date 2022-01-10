@@ -4,23 +4,6 @@ import ast
 import sys
 import numpy as np
 
-
-def print_simulation(solute, solvent_model, params):
-    print("Solute:")
-    print("   {name} charge={charge} sigma={sigma} epsilon={eps}".format(**solute))
-    print("Simulation parameters:")
-    for k, v in params.items():
-        print("  ", k, v)
-    print(f"   solvent {solvent_model.filename}")
-    print("Solvent model:")
-    print(f"   name {solvent_model.aname}")
-    print(f"   file  {solvent_model.filename}")
-    print(f"   ngrid {solvent_model.ifft.ngrid}")
-    print(f"   rmax {solvent_model.ifft.rgrid[-1]}")
-    print(f"   density {solvent_model.density}")
-    print(f"   temp {solvent_model.temp}")
-
-
 def print_banner(title):
     dash = "-" * len(title)
     print(dash)

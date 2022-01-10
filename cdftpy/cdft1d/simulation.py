@@ -1,9 +1,7 @@
-import inspect
 import os
 import sys
 import traceback
 from io import StringIO
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -12,7 +10,7 @@ from cdftpy.cdft1d.coulomb import compute_long_range_coul_pot_kspace, compute_lo
 from cdftpy.cdft1d.exceptions import ConvergenceError
 from cdftpy.cdft1d.io_utils import read_solute, read_key_value
 from cdftpy.cdft1d.potential import compute_lj_potential_mod, compute_lj_potential
-from cdftpy.utils.units import kb
+from cdftpy.cdft1d.units import kb
 import cdftpy.cdft1d.rism as rism
 import cdftpy.cdft1d.rsdft as rsdft
 from cdftpy.cdft1d.solvent import Solvent

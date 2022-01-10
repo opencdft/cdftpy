@@ -3,20 +3,16 @@
 """
 Main RISM module
 """
-import os
 import sys
 
 
 import numpy as np
 
 from cdftpy.cdft1d._version import __version__
-from cdftpy.cdft1d import simulation
-from cdftpy.cdft1d.coulomb import compute_coulomb_potential
 
 from cdftpy.cdft1d.diis import diis_session
 from cdftpy.cdft1d.exceptions import ConvergenceError
-from cdftpy.cdft1d.io_utils import print_banner, get_banner
-from cdftpy.utils.units import R
+from cdftpy.cdft1d.io_utils import get_banner
 
 from cdftpy.cdft1d.loggers import get_stream_logger
 
@@ -29,7 +25,6 @@ Marat Valiev and Gennady Chuev
 ==================================
 """
 
-kb = R
 PI = np.pi
 
 DEFAULT_PARAMS = dict(diis_iterations=2, tol=1.0e-9, output_rate=10, max_iter=200, rcoul=1.25)
@@ -122,8 +117,6 @@ def rism_1d(sim, quiet=True, capture=True):
     logger.info(f"{'Total Free Energy ':<30} {fe:>12.6f}")
 
     fe, fe_extra = compute_free_energy(beta, rho_0, ifft, vl_r, g_r, h_r, cs_r)
-
-    sys.stdout = sys.__stdout__
 
     sim.fe_tot = fe
     sim.h_r = h_r

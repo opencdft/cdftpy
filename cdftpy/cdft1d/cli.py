@@ -19,7 +19,7 @@ from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.validation import Validator
 
 from cdftpy.cdft1d._version import __version__
-from cdftpy.cdft1d.config import DATA_DIR
+from cdftpy.cdft1d.globals import DATA_DIR
 from cdftpy.cdft1d.workflow import cdft1d_single_point, cdft1d_multi_solute
 from cdftpy.cdft1d.simulation import RUNNERS
 

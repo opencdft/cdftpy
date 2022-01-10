@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from cdftpy.cdft1d.potential import compute_lj_potential, compute_lj_potential_mod
-from cdftpy.utils.rad_fft import fft_rgrid_iv
+from cdftpy.cdft1d.rad_fft import fft_rgrid_iv
 
 
 def test_compute_lj_matrix():

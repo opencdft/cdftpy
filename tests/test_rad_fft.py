@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from cdftpy.utils.rad_fft import RadFFT, fft_kgrid_spacing
+from cdftpy.cdft1d.rad_fft import RadFFT, fft_kgrid_spacing
 
 """ Module for testing discrete sine transform"""
 

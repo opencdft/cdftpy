@@ -39,8 +39,8 @@ def test_single_point(input_file):
     method = "rsdft"
     solvent_model = "s2"
     fe = cdft1d_single_point(input_file, method = method, solvent = solvent_model)
-    # fe_ref = -296.7836464403522
-    fe_ref = -301.56429559691776
+
+    fe_ref = -301.5653524874773
     assert fe == pytest.approx(fe_ref, abs=1e-3)
 
 # def test_single_point_rism(input_file):
@@ -97,6 +97,6 @@ def test_multi_point_triplet(input_file):
                              nsteps=2
                              )
 
-    # fe_ref = [-296.7836464403522, 71.16765356431705]
-    fe_ref = [-301.56429559691776, 70.55222234327249]
+
+    fe_ref = [-301.5653524874773, 70.55225721832076]
     assert fe == pytest.approx(fe_ref, abs=1e-3)

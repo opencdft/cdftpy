@@ -15,6 +15,7 @@ can be performed as
 cdft1d <input_file>
 ```
 where example input file for Cl- ion is given by
+
 ```
 <solute>
 #name   sigma(A)        eps(kj/mol)    charge(e)  
@@ -30,6 +31,7 @@ where example input file for Cl- ion is given by
 ```
 The output will contain solvation free energy as well as peak
 analysis of solvent density around the ion, e.g.
+
 ```
 ....
 -----------------------------

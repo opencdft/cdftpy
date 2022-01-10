@@ -68,7 +68,7 @@ def test_rism_anion():
 
     sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
-    fe_ref = -265.7216619843735
+    fe_ref = -265.72289940523075
 
     assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 
@@ -94,7 +94,7 @@ def test_rism_anion_rmax():
 
     sim = IonSolvation(**solute, **params, solvent="s2", method="rism")
     sim.cdft()
-    fe_ref = -265.7230396386633
+    fe_ref = -265.72446784728345
 
     assert sim.fe_tot == pytest.approx(fe_ref, abs=1e-3)
 

@@ -9,9 +9,8 @@ from math import pi
 import numpy as np
 from scipy.special import erf
 
-from cdftpy.utils.units import bohr_2_ang
-from cdftpy.utils.units import epot_2_kjmol
-from cdftpy.utils.units import hartree_2_kjmol
+from cdftpy.cdft1d.units import bohr_2_ang
+from cdftpy.cdft1d.units import hartree_2_kjmol
 
 _unit_factor = {"hartree": 1.0 / bohr_2_ang, "kj/mol": hartree_2_kjmol / bohr_2_ang}
 
@@ -25,7 +24,7 @@ def compute_coulomb_potential(rho_0, qv, ifft, htot_k):
 
 
 def compute_coulomb_energy(qs, epot_r):
-    return 0.5 * qs * epot_2_kjmol * np.sum(epot_r[:, 0])
+    return 0.5 * qs * hartree_2_kjmol * np.sum(epot_r[:, 0])
 
 
 def compute_gauss_pot_kspace(kgrid, r_s):

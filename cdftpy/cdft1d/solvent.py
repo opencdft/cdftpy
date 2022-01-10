@@ -16,12 +16,12 @@ from itertools import combinations as comb
 import numpy as np
 from prettytable import PrettyTable, PLAIN_COLUMNS
 
-from cdftpy.cdft1d.config import DATA_DIR
+from cdftpy.cdft1d.globals import DATA_DIR
 from cdftpy.cdft1d.io_utils import read_array
 from cdftpy.cdft1d.io_utils import read_key_value
 from cdftpy.cdft1d.io_utils import read_molecule
-from cdftpy.utils.rad_fft import RadFFT, fft_rgrid_iv
-from cdftpy.utils.units import hartree_2_kjmol, bohr_2_ang
+from cdftpy.cdft1d.rad_fft import RadFFT, fft_rgrid_iv
+from cdftpy.cdft1d.units import hartree_2_kjmol, bohr_2_ang
 
 logging.basicConfig(level=logging.INFO)
 

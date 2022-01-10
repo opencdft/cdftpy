@@ -11,7 +11,7 @@ import holoviews as hv
 
 from cdftpy import IonSolvation
 
-from cdftpy.cdft1d.config import DATA_DIR
+from cdftpy.cdft1d.globals import DATA_DIR
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
 from cdftpy.cdft1d.solvent import Solvent
 
