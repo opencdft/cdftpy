@@ -10,8 +10,8 @@
 - [Introduction](#introduction)
 - [Running from command line](#running-from-command-line)
   - [First steps](#first-steps)
-  - [General usage:](#general-usage)
-- [References:](#references)
+  - [Calculation options](#calculation-options)
+- [References](#references)
   
 ## Introduction
 
@@ -133,44 +133,39 @@ H 1st min position/height: 3.24 0.359
 The same calculation but with RISM methodology
 can be run as
 
-    cdft1d -m rism <input_file>
+    cdft1d -m rism INPUT_FILE
 
 ___
-### General usage:
+### Calculation options
 ___
-```
-Usage: cdft1d [OPTIONS] INPUT_FILE
+There are number options that may be used with `cdft1d`. The complete list
+of those can be displayed by running
 
-Options:
-  -m, --method [rism|rsdft]       
-    Calculation method (default:rsdft)
-  -s, --solvent <solvent model>   
-    solvent model  [default: s2]
-  -a, --adjust [charge|sigma|eps] <value>
-    adjust solute parameters
-  -r, --range [charge|sigma|eps] <values>
-    Run calculation over the range of solute
-    "charge","sigma","eps" values. Values could
-    specified as comma separated sequence (e.g.
-    0,0.5,..) or in triplets notation
-    [start]:stop:nsteps. To avoid  issues with
-    blank spaces, it is recommended that values
-    are enclosed in double quotes.
-  -o, --output
-    generate data output (currently only site density)
-  -d, --dashboard [filename]      
-    Generate dashboard for analysis. 
-    The dashboard will be saved as html file 
-    under the name provided by optional argument. 
-    In the absence of the latter dashboard will be
-    open in browser
-  --version                       
-    display version and exit
-  --help                         
-    Show this message and exit
 ```
+cdft1d --help
+```
+
+The choice of the calculation method, as mentioned earlier, is affected through `-m` option, which will default to RSDFT calculation. 
+
+The choice of solvent is controlled by `-s` option, with default being the `s2` model. For example, the use of  `hcl` solvent can accomplished by
+
+```
+cdft1d -s hcl INPUT_FILE
+```
+
+To examine calculation results in greater detail, we can use `-d` option.
+Used by itself 
+```
+cdft1d -d INPUT_FILE
+```
+it will open interactive dashboard in the dafault browser, where one can interactively examine solvent density profiles, solute-solvent potential of mean force, and solvent electrostatic potentials. Alternatively, the dashboard can be saved to html file (e.g. analysis.html)
+```
+cdft1d -d analysis.html INPUT_FILE
+```
+which can be opened at a later point.
+
 ___
-## References:
+## References
 ___
 G.N. Chuev, M. V. Fedotova and M. Valiev,
  Renormalized site density functional theory,
