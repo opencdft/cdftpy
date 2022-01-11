@@ -113,7 +113,7 @@ def rsdft_1d(sim, quiet=True, capture=True, bridge=False):
         raise ConvergenceError
 
     logger.info("\n")
-    logger.info(f"{'Total Free Energy ':<30} {fe_tot:>12.6f}")
+    logger.info(f"{'Total Free Energy ':<30} {fe_tot:>12.6f} kj/mol")
 
     fe_tot, fe_extra = compute_free_energy(beta, rho_0, ifft, vl_r, g_r, h_r, cs_k)
 
