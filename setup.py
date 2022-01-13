@@ -31,13 +31,13 @@ setup(
     packages=find_packages(exclude=('tests*',)),
     package_data={ "":["data/*"]},
     install_requires=[
-            'scipy',
-            'numpy',
-            'click',
-            'prompt_toolkit',
-            'holoviews',
-            'panel',
-            'prettytable'
+            'scipy>=1.7.3',
+            'numpy>=1.21.5',
+            'click>=8.0.3',
+            'prompt_toolkit>=3.0.24',
+            'holoviews>=1.14.7',
+            'panel>=0.12.6',
+            'prettytable>=2.5.0'
     ],
     entry_points={
         'console_scripts': [
