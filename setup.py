@@ -33,7 +33,6 @@ setup(
     install_requires=[
             'scipy',
             'numpy',
-            'matplotlib',
             'click',
             'prompt_toolkit',
             'holoviews',
