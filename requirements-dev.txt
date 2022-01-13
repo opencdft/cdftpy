@@ -1,15 +1,9 @@
-scipy
-numpy
-matplotlib
+-r requirements.txt
 pytest
-click
-prompt_toolkit
 twine
 sphinx
 sphinx-rtd-theme
 pre-commit
 tox
-holoviews
-panel
 bump2version
-prettytable
+

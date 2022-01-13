@@ -1,0 +1,7 @@
+scipy
+numpy
+click
+prompt_toolkit
+holoviews
+panel
+prettytable
