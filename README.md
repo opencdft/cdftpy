@@ -1,6 +1,6 @@
 <img src="https://user-images.githubusercontent.com/1958085/149244791-869abe06-a26b-4fdd-855a-28f56c79d5f7.png" width="100">
 
-![Tests](https://github.com/mvaliev/cdftpy/actions/workflows/tests.yaml/badge.svg)
+![Tests](https://github.com/opencdft/cdftpy/actions/workflows/tests.yaml/badge.svg)
 # CDFTPY: Python package for performing classical density functional theory calculations for molecular liquids <!-- omit in toc --> 
 #### Marat Valiev and Gennady Chuev<!-- omit in toc --> 
 
