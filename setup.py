@@ -12,7 +12,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="cdftpy",
-    version="0.1.17",
+    version="0.1.18",
     author='Marat Valiev and Gennady Chuev',
     author_email='marat.valiev@gmail.com',
     description='Classical density functional theory code',
