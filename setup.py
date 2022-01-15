@@ -29,7 +29,7 @@ setup(
               'Programming Language :: Python',
               ],
     packages=find_packages(exclude=('tests*',)),
-    package_data={ "":["data/*"]},
+    package_data={ '':['data/*','examples/cdft1d/*']},
     install_requires=[
             'scipy>=1.7.3',
             'numpy>=1.21.5',

@@ -67,7 +67,7 @@ def validate_range(ctx, param, value):
 
 def cdft1d_generate_sample_input():
 
-    input_file = "example"
+    input_file = "cl-example"
     for i in range(10):
         input_file = F"example-{i}.dat"
         filepath = pathlib.Path.cwd() / input_file
@@ -91,7 +91,7 @@ def cdft1d_generate_sample_input():
               metavar="<solvent model>",
               show_default=True,
               help="solvent model")
-@click.option("-o", "--output",  is_flag=True, help="generate data output")
+@click.option("-o", "--output",  is_flag=True, help="generate solvent density output")
 @click.option("-a","--adjust", multiple=True, type=(str, float), callback=validate_adjust,
               metavar='[charge|sigma|eps] <value>',
               help="adjust solute parameters")
