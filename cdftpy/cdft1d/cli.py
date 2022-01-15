@@ -3,27 +3,22 @@
 """
 Command line interface to 1D CDFT calculations
 """
-
-import datetime
-import json
 import pathlib
 import sys
 from collections import defaultdict
 from contextlib import suppress
+from shutil import copy
 
 import click
 from click import BadParameter
-from prompt_toolkit import prompt
-from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.shortcuts import confirm
-from prompt_toolkit.validation import Validator
 
 from cdftpy.cdft1d._version import __version__
-from cdftpy.cdft1d.globals import DATA_DIR
+from cdftpy.cdft1d.globals import DATA_DIR, EXAMPLES_DIR
 from cdftpy.cdft1d.workflow import cdft1d_single_point, cdft1d_multi_solute
 from cdftpy.cdft1d.simulation import RUNNERS
 
 KNOWN_METHODS = [k for k in RUNNERS.keys()]
+
 def validate_adjust(ctx, param, value):
     for v in value:
         if v[0] not in ["charge","sigma","eps"]:
@@ -70,111 +65,20 @@ def validate_range(ctx, param, value):
         raise BadParameter(msg_val)
     return (value[0],seq)
 
+def cdft1d_generate_sample_input():
 
-def cdft1d_generate_input():
-    def is_float(num):
-        try:
-            float(num)
-            return True
-        except ValueError:
-            return False
-
-    def is_empty(line):
-        return line.strip() != ""
-
-    def file_exist(filename):
-        filename = filename + ".dat"
-        one_word = filename.strip().find(" ") == -1
-        not_blank = filename.strip() != ""
-        return one_word and not_blank
-
-    validator = Validator.from_callable(
-        is_float, error_message="This input is invalid number", move_cursor_to_end=True
-    )
-    validator_file = Validator.from_callable(
-        file_exist, error_message="Bad filename", move_cursor_to_end=True
-    )
-
-    validator_empty = Validator.from_callable(
-        is_empty, error_message="input cannot be blank", move_cursor_to_end=True
-    )
-
-    history = InMemoryHistory()
-    history.append_string("rism")
-    history.append_string("rsdft")
-    history.append_string("s2_rsdft")
-    history.append_string("s2_rism")
-
-    with open(DATA_DIR / "ion_data.json") as fp:
-        ion_data = json.load(fp)
-
-    while True:
-        try:
-
-            prompt(
-                "Simulation type: ",
-                accept_default=True,
-                default=" Single ion solvation",
-            )
-
-            solvent = prompt("Solvent model: ", default="s2")
-            print("Provide ion parameters")
-            name = prompt("  name: ", validator=validator_empty)
-
-            name = name.lower()
-            if name in ion_data:
-                default_charge = str(ion_data[name]["charge"])
-                default_eps = str(ion_data[name]["eps"])
-                default_sigma = str(ion_data[name]["sigma"])
-            else:
-                default_charge = ""
-                default_eps = ""
-                default_sigma = ""
-
-            charge = prompt("  charge: ", validator=validator, default=default_charge)
-            eps = prompt(
-                "  \u03B5 (kj/mol): ", validator=validator, default=default_eps
-            )
-            sigma = prompt("  \u03C3 (Å): ", validator=validator, default=default_sigma)
-
-
-            while 1:
-                input_file = prompt(
-                    "Choose name for the input file: ",
-                    default=f"{name}.dat",
-                    validator=validator_file,
-                )
-                filepath = pathlib.Path.cwd() / input_file
-                if filepath.exists():
-                    answer = confirm(
-                        f"File {input_file} exists. Overwrite? ", suffix="y/N: "
-                    )
-                    if answer:
-                        break
-                    continue
-                break
-
-            now = datetime.datetime.now()
-            with open(input_file, "w") as fp:
-                fp.write("# Input file for single ion solvation calculation\n")
-                fp.write(f"# generated on {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                fp.write("<solute>\n")
-                fp.write(f"#name  sigma  eps charge \n")
-                fp.write(f" {name}  {sigma} {eps} {charge} \n")
-                fp.write("<simulation>\n")
-                fp.write(f"solvent {solvent}\n")
-
-            print(f"Generated input file {input_file}")
-
-        except EOFError:
-            quit(1)
-        except KeyboardInterrupt:
-            quit(0)
-        else:
+    input_file = "example"
+    for i in range(10):
+        input_file = F"example-{i}.dat"
+        filepath = pathlib.Path.cwd() / input_file
+        if not filepath.exists():
             break
+        input_file = None
+
+    if input_file is not None:
+        copy(EXAMPLES_DIR / "cl.dat", input_file)
 
     return input_file
-
 
 # noinspection PyTypeChecker
 @click.command()
@@ -221,7 +125,11 @@ def cdft_cli(input_file, method, solvent_model, version, scan, dashboard, adjust
         print('Input file is required to run the calculation\n')
         value = click.prompt('Should I generate one? ', default="N")
         if value == 'y':
-            input_file = cdft1d_generate_input()
+            input_file = cdft1d_generate_sample_input()
+            print(F"Generated sample input file {input_file}")
+            value = click.prompt('Go ahead and run it', default="Y")
+            if value != 'Y':
+                sys.exit(0)
         else:
             sys.exit(1)
 
