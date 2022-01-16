@@ -159,7 +159,11 @@ it will open interactive dashboard in the dafault browser, where one can interac
 ```
 cdft1d -d analysis.html INPUT_FILE
 ```
-which can be opened at a later point.
+which can be opened at a later point. The content of
+dashboard will depend on the type of the calculation. For example, for
+single ion solvation calculation it will look like 
+**[this](https://opencdft.github.io/cl.html)** and for multiple
+parameter calculation as **[this](https://opencdft.github.io/charging.html)**
 
 ___
 ## References
