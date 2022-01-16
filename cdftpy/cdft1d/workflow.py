@@ -94,7 +94,7 @@ def cdft1d_multi_solute(input_file, var, method=None, solvent=None,
     print(tbl)
 
     if dashboard is not None:
-        multi_solute_viz(var, values[:len(sim_array)], sim_array, dashboard_dest=dashboard)
+        multi_solute_viz(var, values[:len(sim_array)], sim_array, dashboard_dest=dashboard, template="fastlist")
 
     return fe_array
 
@@ -116,6 +116,6 @@ def cdft1d_single_point(input_file, solvent=None, method=None, dashboard=None, a
         sim.write_density()
 
     if dashboard is not None:
-        single_point_viz(sim, dashboard_dest=dashboard)
+        single_point_viz(sim, dashboard_dest=dashboard,template="fastlist")
 
     return fe

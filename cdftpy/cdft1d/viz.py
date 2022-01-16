@@ -12,8 +12,11 @@ from contextlib import redirect_stdout
 import holoviews as hv
 import numpy as np
 import panel as pn
+from panel.param import Param
+from panel.widgets.indicators import BooleanIndicator
 from prettytable import PrettyTable, PLAIN_COLUMNS
 
+from cdftpy.cdft1d.globals import DATA_DIR
 from cdftpy.cdft1d.rdf import analyze_rdf_peaks_sim
 
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
@@ -48,11 +51,12 @@ def epot_dashboard(sim):
     epot_plot = []
     xlim = r[-1] / 2
     epot_plot.append(hv.Curve((r, epot), 'r', 'Potential (au)',
-                              group="Total Electric Potential").opts(xlim=(0, xlim), width=500))
+                              group="Total Electric Potential").opts(xlim=(0, xlim)))
     epot_plot.append(hv.Curve((r, rho), 'r', 'Density',
-                              group="Total Charge Density").opts(xlim=(0, xlim), width=500))
+                              group="Total Charge Density").opts(xlim=(0, xlim)))
 
-    epot_widget = pn.Column(hv.Layout(epot_plot).cols(1), sizing_mode='stretch_both')
+    epot_widget = pn.Column(pn.Column(epot_plot[0]),pn.Column(epot_plot[1]), sizing_mode='stretch_both')
+    # epot_widget = pn.Column(hv.Layout(epot_plot).cols(1), sizing_mode='stretch_both')
     return epot_widget
 
 
@@ -179,7 +183,7 @@ def rdf_dashboard(sim):
     overlay = hv.Overlay(rdf_plot)
     overlay = overlay.opts(xlim=(0, xlim))
     overlay = overlay.options({'Curve': {'color': hv.Cycle(water)}})
-    rdf_panel = pn.panel(overlay)
+    rdf_panel = pn.Column(overlay, height=500)
     peaks = rdf_peaks_dashboard(sim)
     rdf_widget = pn.Column(rdf_panel, peaks, sizing_mode='stretch_both')
 
@@ -205,8 +209,9 @@ def rdf_peaks_dashboard(sim):
                     )
     tbl.align = "r"
 
-    txt = tbl.get_string()
-    return pn.pane.HTML(F"<pre>{txt}</pre>", height=100)
+    txt = tbl.get_html_string(format=True)
+    # return pn.pane.HTML(F"<pre>{txt}</pre>", height=100, width=300, scroll=True)
+    return pn.Column(pn.pane.HTML(txt), scroll=True)
 
 
 def xi_dashboard(sim):
@@ -277,7 +282,6 @@ def pmf_dashboard(sim):
 
     return pmf_widget
 
-
 def results_dashboard(sim):
     fe_tot = sim.fe_tot.round(3)
 
@@ -287,8 +291,8 @@ def results_dashboard(sim):
     s = solvent.to_string()
 
     sim_params = F"Method: {sim.method}\n" \
-                 F"Box size: {sim.rmax}\n" \
-                 F"Temp: {solvent.temp}"
+                 F"Box size: {round(sim.rmax,2)} Å\n" \
+                 F"Temp: {solvent.temp} K"
     txt = F"""
     <h2>Free energy of solvation:</h2> <pre>{fe_tot} kj/mol</pre>
     <hr>
@@ -312,8 +316,8 @@ def multi_solute_results_dashboard(sim):
 
     solv_txt = solvent.to_string()
     sim_params = F"Method: {s.method}\n" \
-                 F"Box size: {s.rmax}\n" \
-                 F"Temp: {solvent.temp}"
+                 F"Box size: {round(s.rmax,2)} Å\n" \
+                 F"Temp: {solvent.temp} K"
     txt = F"""
     <h2>Simulation parameters:</h2><pre>{sim_params}</pre>
     <hr>
@@ -325,7 +329,7 @@ def multi_solute_results_dashboard(sim):
     return pn.Column(html_pane, scroll=True, width=500)
 
 
-def single_point_viz(sim, dashboard_dest="browser"):
+def single_point_viz1(sim, dashboard_dest="browser"):
     html_pane = results_dashboard(sim)
     rdf_widget = rdf_dashboard(sim)
     pmf_widget = pmf_dashboard(sim)
@@ -337,17 +341,112 @@ def single_point_viz(sim, dashboard_dest="browser"):
     else:
         viz.save(dashboard_dest)
 
+def single_point_viz2(sim, dashboard_dest="browser"):
 
-def multi_solute_viz(var, values, sim, dashboard_dest="browser"):
+    html_pane = results_dashboard(sim)
+    rdf_widget = rdf_dashboard(sim)
+    pmf_widget = pmf_dashboard(sim)
+    epot_widget = epot_dashboard(sim)
+    charts = pn.Tabs(("Density", rdf_widget), ("PMF", pmf_widget), ("Electric Potential", epot_widget))
+
+    bootstrap = pn.template.FastListTemplate(title=F"Analysis of {sim.name} solvation in {sim.solvent.model} solvent",
+                                             logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+                                             sidebar=html_pane, sidebar_width=500,
+                                             main = [charts],
+                                             theme_toggle=True,
+                                             shadow=False
+                                             )
+
+
+
+    bootstrap.show()
+
+def single_point_viz(sim, dashboard_dest="browser", template="material"):
+
+    html_pane = results_dashboard(sim)
+    rdf_widget = rdf_dashboard(sim)
+    pmf_widget = pmf_dashboard(sim)
+    epot_widget = epot_dashboard(sim)
+    charts = pn.Tabs(("Density", rdf_widget), ("PMF", pmf_widget), ("Electric Potential", epot_widget))
+
+    if template == "bootstrap":
+        tpl = pn.template.BootstrapTemplate(title=F"Analysis of {sim.name} solvation in {sim.solvent.model} solvent",
+                                                 header_background = "#707070",
+                                                 logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+                                                 sidebar_width=500
+                                                 )
+
+        tpl.sidebar.append(html_pane)
+        tpl.main.append(charts)
+    elif template == "material":
+        tpl = pn.template.MaterialTemplate(title=F"Analysis of {sim.name} solvation in {sim.solvent.model} solvent",
+                                                 header_background = "#707070",
+                                                 logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+                                                 sidebar_width=500,
+                                                 site_url='https://github.com/opencdft'
+                                                 )
+
+        tpl.sidebar.append(html_pane)
+        tpl.main.append(charts)
+
+    elif template == "fastlist":
+        tpl = pn.template.FastListTemplate(
+            title=F"Analysis of {sim.name} solvation in {sim.solvent.model} solvent",
+            header_background="#707070",
+            logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+            sidebar=html_pane, sidebar_width=500,
+            main=[charts],
+            theme_toggle=False,
+            site_url='https://github.com/opencdft'
+        )
+    else:
+        tpl = pn.Row(html_pane, charts)
+
+    if dashboard_dest == "browser":
+        tpl.show()
+    else:
+        tpl.save(dashboard_dest)
+
+
+def multi_solute_viz(var, values, sim, dashboard_dest="browser", template="material"):
     html_pane = multi_solute_results_dashboard(sim)
     rdf_widget = multi_solute_rdf_dashboard(var, values, sim)
     e_widget = multi_solute_energy_dashboard(var, values, sim)
     charts = pn.Tabs(("Solvation Free Energy", e_widget), ("Density", rdf_widget))
-    # if sim[0].solvent.nv == 2:
-    #     charts.append(("Peak Analysis",multi_solute_peaks_dashboard(var, values, sim)))
-    viz = pn.Row(html_pane, charts)
-    if dashboard_dest == "browser":
-        viz.show()
+
+    title = F" {var.capitalize()} analysis of {sim[0].name} solvation in {sim[0].solvent.model} solvent"
+
+    if template == "material":
+        tpl = pn.template.MaterialTemplate(title=title,
+                                           header_background="#707070",
+                                           logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+                                           sidebar_width=500
+                                           )
+
+        tpl.sidebar.append(html_pane)
+        tpl.main.append(charts)
+    elif template == "bootstrap":
+        tpl = pn.template.BootstrapTemplate(title=title,
+                                                 header_background = "#707070",
+                                                 logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+                                                 sidebar_width=500
+                                                 )
+
+        tpl.sidebar.append(html_pane)
+        tpl.main.append(charts)
+    elif template == "fastlist":
+        tpl = pn.template.FastListTemplate(
+            title=title,
+            header_background="#707070",
+            logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
+            sidebar=html_pane, sidebar_width=500,
+            main=[charts],
+            theme_toggle=False
+            )
     else:
-        viz.save(dashboard_dest)
+        tpl = pn.Row(html_pane, charts)
+    if dashboard_dest == "browser":
+        tpl.show()
+    else:
+        tpl.save(dashboard_dest)
 

@@ -240,7 +240,7 @@ class Solvent(Molecule):
         nv = self.nv
         print(f"Solvent:", file=sp)
         print(f"  model: {self.model}", file=sp)
-        print(f"  file: {self.filename}", file=sp)
+        print(f"  file: {os.path.relpath(self.filename)}", file=sp)
         tbl = PrettyTable()
         tbl.set_style(PLAIN_COLUMNS)
         tbl.field_names = ["site", "sigma(Å)", "epsilon(kj/mol)", "charge"]
