@@ -328,39 +328,6 @@ def multi_solute_results_dashboard(sim):
     html_pane = pn.pane.HTML(F"{txt}")
     return pn.Column(html_pane, scroll=True, width=500)
 
-
-def single_point_viz1(sim, dashboard_dest="browser"):
-    html_pane = results_dashboard(sim)
-    rdf_widget = rdf_dashboard(sim)
-    pmf_widget = pmf_dashboard(sim)
-    epot_widget = epot_dashboard(sim)
-    charts = pn.Tabs(("Density", rdf_widget), ("PMF", pmf_widget), ("Electric Potential", epot_widget))
-    viz = pn.Row(html_pane, charts)
-    if dashboard_dest == "browser":
-        viz.show()
-    else:
-        viz.save(dashboard_dest)
-
-def single_point_viz2(sim, dashboard_dest="browser"):
-
-    html_pane = results_dashboard(sim)
-    rdf_widget = rdf_dashboard(sim)
-    pmf_widget = pmf_dashboard(sim)
-    epot_widget = epot_dashboard(sim)
-    charts = pn.Tabs(("Density", rdf_widget), ("PMF", pmf_widget), ("Electric Potential", epot_widget))
-
-    bootstrap = pn.template.FastListTemplate(title=F"Analysis of {sim.name} solvation in {sim.solvent.model} solvent",
-                                             logo='https://user-images.githubusercontent.com/1958085/149641473-72df40c2-6691-4446-b8a6-759500a65b9c.png',
-                                             sidebar=html_pane, sidebar_width=500,
-                                             main = [charts],
-                                             theme_toggle=True,
-                                             shadow=False
-                                             )
-
-
-
-    bootstrap.show()
-
 def single_point_viz(sim, dashboard_dest="browser", template="material"):
 
     html_pane = results_dashboard(sim)
