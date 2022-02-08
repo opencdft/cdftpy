@@ -5,6 +5,7 @@
 #### Marat Valiev and Gennady Chuev<!-- omit in toc --> 
 
 - [Introduction](#introduction)
+- [Installation](#installation)
 - [Running from command line](#running-from-command-line)
   - [First steps](#first-steps)
   - [Calculation options](#calculation-options)
@@ -21,6 +22,33 @@ Interaction Site Model (RISM). At this stage of development, the code
 allows to investigate the problem of ion solvation providing free energy
 of solvation and solvent density profiles around the ion.
 
+## Installation
+
+1. Ensure that the version of python is 3.9 or higher
+
+``` 
+python3 --version
+```
+  
+2. Change into the directory containing code distribution
+   
+3. Create virtual environment
+   
+```
+python3 -m venv venv
+```
+
+4. Activate virtual environment
+   
+```
+source venv/bin/activate
+```
+    
+5. Install
+   
+```
+pip install -e .
+```
 
 ## Running from command line
 
